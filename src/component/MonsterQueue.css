@@ -1,0 +1,87 @@
+/* MonsterQueue.css */
+
+.monsterquque-grid {
+  background-color: rgba(31, 41, 55, 0.5);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header {
+  background-color: rgba(79, 70, 229, 0.5);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* This is the container for the monster cards */
+.monsterquque-grid > div:not(.section-header) {
+  display: flex;
+  flex-direction: row; /* Ensure horizontal layout */
+  justify-content: center;
+  gap: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* Adjust the monster cards to be smaller and in a row */
+.monsterquque-grid .monster-card {
+  min-width: 150px;
+  max-width: 200px; /* Add max-width to prevent cards from getting too wide */
+  flex: 0 0 auto; /* Prevent cards from growing or shrinking */
+  margin: 0;
+}
+
+.monsterquque-grid .monster-image {
+  font-size: 32px;
+}
+
+.monsterquque-grid .monster-name {
+  font-size: 0.875rem;
+}
+
+.monsterquque-grid .skill-container {
+  height: 32px;
+  font-size: 0.8rem;
+  padding: 4px 6px;
+}
+
+/* Scrollbar styling */
+.monsterquque-grid > div:not(.section-header)::-webkit-scrollbar {
+  height: 8px;
+}
+
+.monsterquque-grid > div:not(.section-header)::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.monsterquque-grid > div:not(.section-header)::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.monsterquque-grid > div:not(.section-header)::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .monsterquque-grid > div:not(.section-header) {
+    justify-content: flex-start;
+    padding-bottom: 12px;
+  }
+  
+  .monsterquque-grid .monster-card {
+    min-width: 120px;
+  }
+}

@@ -1,0 +1,69 @@
+.monster-card {
+  background: linear-gradient(145deg, #3a3a5a, #2a2a4a);
+  border: 2px solid #4a4a7a;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.monster-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+.health-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.health-indicator {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.monster-image-container {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.monster-image {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 8px;
+}
+
+.monster-name {
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.monster-skills {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.skill-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
