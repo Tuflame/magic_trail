@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import "./App.css";
 
 import { useGameLogic } from "./hook/GameLogic";
@@ -9,53 +9,45 @@ import type { Player, Monster } from "./hook/GameLogic";
 
 export default function GamePage() {
   const {
+    players,
+    battleFieldMonster,
+    queueMonster,
     generatePlayer,
     generateMonster,
-    generateMultipleMonsters,
-    clearMonsters,
+    killMonsterAt,
+    movePlayerToFront,
+    rotatePlayers
   } = useGameLogic();
+  const [id,setID]=useState(1);
 
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [monsters, setMonsters] = useState<Monster[]>([]);
-  const [monsterCounter, setMonsterCounter] = useState(0);
-
-  const handleGenerateMonster = () => {
-    setMonsterCounter(n => n + 1);
-    const newMonster = generateMonster();
-    setMonsters(prev => [...prev, newMonster]);
-  };
-
-  const handleGeneratePlayer = () => {
-    const newPlayers: Player[] = [];
-    for (let i = 1; i <= 6; i++) {
-      newPlayers.push(generatePlayer(i, "第" + i  + "組"));
-    }
-
-    setPlayers(prev => [...prev, ...newPlayers]);
-  };
-
-  const handleDefeat = () => {
-    // 這裡可補寫擊敗怪物的邏輯
-  };
-
-  return (
+  const plus=()=>{
+    setID((prev)=>(prev+1));
+  }
+   return (
     <div className="main-container">
       <div className="left-section">
         <Order players={players} />
         <h2>控制區</h2>
-        <button onClick={handleGeneratePlayer}>生成玩家</button>
-        <button onClick={handleGenerateMonster}>生成怪物</button>
+        <button onClick={() => {generatePlayer(id, `玩家${id}`),plus()}}>生成玩家</button>
+        <button onClick={() => movePlayerToFront(3)}>將第3往前調動</button>
+        <button onClick={rotatePlayers}>調動</button>
+        <button onClick={generateMonster}>生成怪物</button>
+        <button onClick={() => killMonsterAt(0)}>🗡️ 擊殺第1隻怪物</button>
+        <button onClick={() => killMonsterAt(1)}>🗡️ 擊殺第2隻怪物</button>
+        <button onClick={() => killMonsterAt(2)}>🗡️ 擊殺第3隻怪物</button>
       </div>
 
       <div className="right-section">
         <div className="battlefield-wrapper">
-            <Battlefield monsters={monsters.slice(0, 3)} />
-        </div>
+          <Battlefield monsters={battleFieldMonster} />
+        </div> 
         <div className="queue-wrapper">
-            <MonsterQueue monsters={monsters.slice(3, 6)} />
+          <MonsterQueue monsters={queueMonster} />
         </div>
       </div>
 
     </div>
   );
 }
+
+
