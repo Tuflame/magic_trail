@@ -53,12 +53,17 @@ export default function GamePage() {
 
       <div className="right-section">
         <div className="WorldEvent-wrapper">
-          {event ? (
-              <EventCard event = {event}/> /* if 有 event 建立卡片*/
-          ) : (
-            <p>無事件資料</p>  /* if 有 event 建立卡片*/
-          )}
-        </div> 
+          <div className="WorldEvent-header">
+            <h2 className="WorldEvent-title">事件</h2>
+          </div>
+          <div className="WorldEvent-container">
+            {event ? (
+                <EventCard event = {event}/> /* if 有 event 建立卡片*/
+            ) : (
+              <p>無事件資料</p>  /* if 有 event 建立卡片*/
+            )}
+          </div>
+        </div>
         <div className="log-wrapper">
           {/* <MonsterQueue monsters={queueMonster} /> */}
         </div>
