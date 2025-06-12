@@ -117,7 +117,7 @@ export function useGameLogic(){
 
     // 第二個戰利品（50% 機率出現）
     if (Math.random() < 0.5) {
-      if (Math.random() < 0.5) {
+      if (Math.random() < 0.65) {
         gold += 1;
       } else {
         spellCards = getRandomSpellCard();
@@ -136,17 +136,40 @@ export function useGameLogic(){
       },
     };
 
-    setMonsters((prev) => [...prev, newMonster]);
+    // 更新整體 monsters 陣列
+    const updatedMonsters = [...monsters, newMonster];
+    setMonsters(updatedMonsters);
+
+    // 切分成 battlefield / queue
+    const battlefield = updatedMonsters.slice(0, 3);
+    const queue = updatedMonsters.slice(3);
+    setBattleFieldMonster(battlefield);
+    setQueueMonster(queue);
+
     return newMonster;
   };
-  // 生成多個怪獸
-  const generateMultipleMonsters = (count: number): Monster[] => {
-    const newMonsters: Monster[] = [];
-    for (let i = 0; i < count; i++) {
-      const monster = generateMonster();
-      newMonsters.push(monster);
-    }
-    return newMonsters;
+
+  const [battleFieldMonster,setBattleFieldMonster]=useState<Monster[]>([]);
+  const [queueMonster,setQueueMonster]=useState<Monster[]>([]);
+
+ const killMonsterAt = (index: number) => {
+    const battlefield = [...battleFieldMonster];
+    const queue = [...queueMonster];
+
+    // 若沒有等待怪補上就什麼都不做
+    if (!queue.length) return;
+
+    // 替補新怪上來
+    const newMonster = queue[0];
+    battlefield[index] = newMonster;
+
+    // 更新 queue：移除剛補上來的
+    const updatedQueue = queue.slice(1);
+
+    // 更新狀態
+    setBattleFieldMonster(battlefield);
+    setQueueMonster(updatedQueue);
+    setMonsters([...battlefield, ...updatedQueue]); // 🧠 確保同步主 monsters 狀態
   };
 
   const [attackQueue, setAttackQueue] = useState<AttackAction[]>([]);
@@ -221,8 +244,10 @@ export function useGameLogic(){
     players,
     generatePlayer,
     monsters,
+    battleFieldMonster,
+    queueMonster,
     generateMonster,
-    generateMultipleMonsters,
     clearMonsters,
+    killMonsterAt
   };
 }
