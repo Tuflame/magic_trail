@@ -5,6 +5,7 @@ import { useGameLogic } from "../hook/GameLogic";
 import { Order } from "../component/Order";
 import { Battlefield } from "../component/Battlefield";
 import { MonsterQueue } from "../component/MonsterQueue";
+import { EventCard } from "../component/EventCard"
 import type { Player, Monster } from "../hook/GameLogic";
 
 import type {GameLogicType} from "../hook/GameLogic"
@@ -20,6 +21,7 @@ export default function GamePage({ game }: { game: GameLogicType }) {
     movePlayerToFront,
     rotatePlayers,
     triggerRandomEvent,
+    event,
   } = game;
   const [id,setID]=useState(1);
 
@@ -40,15 +42,28 @@ export default function GamePage({ game }: { game: GameLogicType }) {
         <button onClick={() => killMonsterAt(2)}>🗡️ 擊殺第3隻怪物</button>
         <button onClick={triggerRandomEvent}>隨機事件</button>
       </div>
-
-      <div className="right-section">
+      <div className="middle-section">
         <div className="battlefield-wrapper">
           <Battlefield monsters={battleFieldMonster} />
         </div> 
         <div className="queue-wrapper">
-          <MonsterQueue monsters={queueMonster}/>
+          <MonsterQueue monsters={queueMonster} />
         </div>
       </div>
+
+      <div className="right-section">
+        <div className="WorldEvent-wrapper">
+          {event ? (
+              <EventCard event = {event}/> /* if 有 event 建立卡片*/
+          ) : (
+            <p>無事件資料</p>  /* if 有 event 建立卡片*/
+          )}
+        </div> 
+        <div className="log-wrapper">
+          {/* <MonsterQueue monsters={queueMonster} /> */}
+        </div>
+      </div>
+
 
     </div>
   );

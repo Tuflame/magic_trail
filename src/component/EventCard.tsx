@@ -5,7 +5,7 @@ type GameEventProps = {
   event:GameEvent ;
 };
 
-export default function EventCard({event}: GameEventProps) {
+export function EventCard({event}: GameEventProps) {
 
   return (
     <div className={"Event-card"}>
@@ -23,16 +23,6 @@ export default function EventCard({event}: GameEventProps) {
             <p>無事件資料</p>
           )}
       </div>
-
-      <div className="Event-card-bottom">
-        {event?.effects && event.effects.length > 0 ? (
-          <h3 className="Event-effects-description">{event.effects[0].description}</h3>
-        ) : (
-          <h3 className="Event-effects-description">無Effect</h3>
-        )}
-      </div>
-
-
     </div>
   );
 }
