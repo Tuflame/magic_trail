@@ -14,7 +14,7 @@ export type EventEffect = {
 export type GameEvent = {
   name: string;
   description: string;
-  effects?: EventEffect[];
+  effects?: EventEffect | EventEffect[];
 };
 
 // 主事件表
@@ -30,15 +30,13 @@ const eventTable: GameEvent[] = [
   {
     name: "精靈的祝福",
     description: "精靈降臨，所有玩家獲得 +1 魔能石。",
-    effects: [
-      {
-        description: "所有玩家 +1 魔能石",
-        applyEffect: () => {
-          console.log("🌟 所有玩家魔能石 +1");
-          // 可設計 setPlayers(p => ...) 加值處理
-        },
+    effects: {
+      description: "所有玩家 +1 魔能石",
+      applyEffect: () => {
+        console.log("🌟 所有玩家魔能石 +1");
+        // 可設計 setPlayers(p => ...) 加值處理
       },
-    ],
+    },
   },
   {
     name: "元素紊亂",
@@ -67,30 +65,27 @@ const eventTable: GameEvent[] = [
   {
     name: "哥布林襲擊",
     description: "3隻哥布林衝入列隊，血量3，擊殺可得 1 金幣。",
-    effects: [
-      {
-        description: "生成 3 隻哥布林進入列隊",
-        applyEffect: () => {
-          console.log("🗡️ 生成哥布林 x3");
-          // 你可以呼叫 generateMonster("木", "野蠻哥布林", 3) 這類方法
-        },
+    effects: {
+      description: "生成 3 隻哥布林進入列隊",
+      applyEffect: () => {
+        console.log("🗡️ 生成哥布林 x3");
+        // 你可以呼叫 generateMonster("木", "野蠻哥布林", 3) 這類方法
       },
-    ],
+    },
   },
   {
     name: "掏金熱",
     description: "本回合擊殺怪物獲得雙倍金幣。",
-    effects: [
-      {
-        description: "擊殺怪物金幣 x2",
-        applyEffect: () => {
-          console.log("💰 本回合擊殺金幣加倍！");
-          // 可設 flag，結算階段時金幣 *2
-        },
+    effects: {
+      description: "擊殺怪物金幣 x2",
+      applyEffect: () => {
+        console.log("💰 本回合擊殺金幣加倍！");
+        // 可設 flag，結算階段時金幣 *2
       },
-    ],
+    },
   },
 ];
+
 
 export type Player = {
   id: number;
@@ -329,26 +324,34 @@ export function useGameLogic(){
   const [event,setEvent]=useState<GameEvent>();
   //隨機事件
   const triggerRandomEvent = () => {
-    const randomIndex = Math.floor(Math.random() * eventTable.length);
-    const selected = eventTable[randomIndex];
+  const randomIndex = Math.floor(Math.random() * eventTable.length);
+  const selected = eventTable[randomIndex];
 
-    // 如果事件有多個效果，從中抽一個
-    if (selected.effects && selected.effects.length > 0) {
-      const randomEffectIndex = Math.floor(Math.random() * selected.effects.length);
-      const chosenEffect = selected.effects[randomEffectIndex];
+  let appliedEffect: EventEffect | undefined;
 
-      // 建立新事件物件，描述為實際選到的效果內容
-      const appliedEvent: GameEvent = {
-        ...selected,
-        description: chosenEffect.description,
-      };
+  // 根據 effect 的型別來決定怎麼處理
+  if (Array.isArray(selected.effects)) {
+    const randomEffectIndex = Math.floor(Math.random() * selected.effects.length);
+    appliedEffect = selected.effects[randomEffectIndex];
+  } else if (selected.effects) {
+    appliedEffect = selected.effects;
+  }
 
-      chosenEffect.applyEffect?.();
-      setEvent(appliedEvent);
-    } else {
-      setEvent(selected);
-    }
-  };
+  if (appliedEffect) {
+    appliedEffect.applyEffect?.();
+
+    const appliedEvent: GameEvent = {
+      ...selected,
+      description: appliedEffect.description, // 使用實際效果的描述
+      effects: appliedEffect, // 也可保留選中的 effect 作為記錄
+    };
+
+    setEvent(appliedEvent);
+  } else {
+    // 沒有 effects 的情況
+    setEvent(selected);
+  }
+};
   // 回傳 Hook 提供的狀態和函式
   return {
     turn,
@@ -366,3 +369,5 @@ export function useGameLogic(){
     triggerRandomEvent
   };
 }
+
+export type GameLogicType = ReturnType<typeof useGameLogic>;

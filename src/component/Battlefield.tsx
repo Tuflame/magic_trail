@@ -3,13 +3,7 @@ import type { Monster } from "../hook/GameLogic";
 import MonsterCard from "./MonsterCard";
 import "./Battlefield.css";
 
-
-type BattlefieldProps = {
-  monsters: Monster[];
-};
-
-export function Battlefield({ monsters }: BattlefieldProps) {
-
+export function Battlefield({ monsters }: { monsters: Monster[] }) {
   return (
     <div className="battlefield">
       <div className="section-header">
@@ -17,12 +11,12 @@ export function Battlefield({ monsters }: BattlefieldProps) {
       </div>
       <div className="battlefield-rowContainer">
         {monsters.map((monster, idx) =>
-            monster ? (
-              <MonsterCard key={idx} monster={monster} />
-            ) : (
-              <div key={idx} className="monster-slot empty">（空）</div>
-            )
-)}
+          monster ? (
+            <MonsterCard key={idx} monster={monster} />
+          ) : (
+            <div key={idx} className="monster-slot empty">（空）</div>
+          )
+        )}
       </div>
     </div>
   );
