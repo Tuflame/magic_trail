@@ -1,8 +1,8 @@
 import React from "react";
 import type { Monster } from "../hook/GameLogic";
-import MonsterCard from "./MonsterCard";
+import MonsterCard from "../MonsterCard";
 
-import "./MonsterQueue.css"
+//import "./MonsterQueue.css"
 
 type MonsterQueueProps = {
   monsters: Monster[];
@@ -17,8 +17,8 @@ export function MonsterQueue({monsters}: MonsterQueueProps) {
           <h2 className="section-title">列隊區域</h2>
         </div>
         <div>
-          {monsters.map((monster, index) => (
-          <MonsterCard key={index} monster={monster} size="small" />
+          {monsters.map((monster) => (
+            <MonsterCard monster={monster} />
           ))}
         </div>
     </div>

@@ -2,10 +2,10 @@ import { useState ,useEffect} from "react";
 import "./App.css";
 
 import { useGameLogic } from "./hook/GameLogic";
-import {Order} from "./component/Order"
+import { Order } from "./component/Order";
 import { Battlefield } from "./component/Battlefield";
 import { MonsterQueue } from "./component/MonsterQueue";
-import type {Player,Monster} from "./hook/GameLogic"
+import type { Player, Monster } from "./hook/GameLogic";
 
 export default function GamePage() {
   const {
@@ -18,7 +18,6 @@ export default function GamePage() {
     movePlayerToFront,
     rotatePlayers
   } = useGameLogic();
-
   const [id,setID]=useState(1);
 
   const plus=()=>{
@@ -27,7 +26,7 @@ export default function GamePage() {
    return (
     <div className="main-container">
       <div className="left-section">
-        <Order players={players}></Order>
+        <Order players={players} />
         <h2>控制區</h2>
         <button onClick={() => {generatePlayer(id, `玩家${id}`),plus()}}>生成玩家</button>
         <button onClick={() => movePlayerToFront(3)}>將第3往前調動</button>
@@ -39,9 +38,14 @@ export default function GamePage() {
       </div>
 
       <div className="right-section">
-        <Battlefield monsters={battleFieldMonster} />
-        <MonsterQueue monsters={queueMonster} />
+        <div className="battlefield-wrapper">
+          <Battlefield monsters={battleFieldMonster} />
+        </div> 
+        <div className="queue-wrapper">
+          <MonsterQueue monsters={queueMonster} />
+        </div>
       </div>
+
     </div>
   );
 }

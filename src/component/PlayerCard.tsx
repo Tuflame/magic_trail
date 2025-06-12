@@ -1,5 +1,7 @@
 import type {Player} from "../hook/GameLogic"
 
+import './PlayerCard.css';
+
 type OrderProps = {
   player: Player;
 };
