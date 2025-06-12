@@ -130,7 +130,7 @@ export type Monster = {
 const monsterNameTable: Record<ElementType, string[]> = {
   火: ["火史萊姆", "炙熱哥布林","火焰蜥蜴"],
   水: ["水史萊姆", "高冷哥布林"],
-  木: ["草史萊姆", "野蠻哥布林"],
+  木: ["草史萊姆", "野蠻哥布林","Bur Bur Patapim"],
   無: ["骷髏", "鬼魂"],
 };
 
@@ -175,7 +175,7 @@ export function useGameLogic(){
   };
   // 隨機選擇 屬性 的輔助函式
   const getRandomElementType = (): ElementType => {
-    const weighted: ElementType[] = ["火", "火", "火", "水", "水", "水", "木", "木", "木", "無"];
+    const weighted: ElementType[] = ["火", "火",  "水", "水",  "木",  "木", "無"];
     const idx = Math.floor(Math.random() * weighted.length);
     return weighted[idx];
   };
@@ -362,6 +362,7 @@ export function useGameLogic(){
     killMonsterAt,
     movePlayerToFront,
     rotatePlayers,
-    event
+    event,
+    triggerRandomEvent
   };
 }
