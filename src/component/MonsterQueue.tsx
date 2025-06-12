@@ -14,11 +14,13 @@ export function MonsterQueue({monsters}: MonsterQueueProps) {
   return (
     <div className="monsterquque-grid">
         <div className="section-header">
-                <h2 className="section-title">列隊區域</h2>
-            </div>
-      {monsters.map((monster) => (
-        <MonsterCard monster={monster} />
-      ))}
+          <h2 className="section-title">列隊區域</h2>
+        </div>
+        <div>
+          {monsters.map((monster) => (
+            <MonsterCard monster={monster} />
+          ))}
+        </div>
     </div>
   );
 }

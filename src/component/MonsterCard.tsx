@@ -10,23 +10,22 @@ export default function MonsterCard({ monster }: MonsterCardProps) {
 
   return (
     <div className="monster-card" data-type={monster.type.toLowerCase()}>
-      <div>{monster.type}</div>
-
-      <div className="health-container">
-        <div className="health-indicator">
-          ❤️ {monster.maxHP}
-        </div>
+      <div className="Header">
+        <div className="monster-type">{monster.type}</div>
+        <div className="monster-health">❤️{monster.HP}/{monster.maxHP}</div>
       </div>
 
-      <div className="monster-image-container">
+      <div className="detail">
         <div className="monster-image">👾</div>
         <div className="monster-name">{monster.name}</div>
       </div>
 
       <div className="monster-skills">
-        <div className="skill-container">💰 Gold: {monster.gold}</div>
-        <div className="skill-container">🔮 Soul: {monster.soulCrystal}</div>
-        <div className="skill-container">🏆 Score: {monster.score}</div>
+        <div className="monster-loot">
+          {monster.loot.gold > 0 && <div>💰 金幣：{monster.loot.gold}</div>}
+          {monster.loot.manaStone > 0 && <div>🔷 魔能石：{monster.loot.manaStone}</div>}
+          {monster.loot.spellCards && <div>🧪 法術卡：{monster.loot.spellCards}</div>}
+        </div>
       </div>
     </div>
   );
