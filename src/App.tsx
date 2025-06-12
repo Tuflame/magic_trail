@@ -18,7 +18,9 @@ export default function GamePage() {
     killMonsterAt,
     movePlayerToFront,
     rotatePlayers,
-    event
+    event,
+    triggerRandomEvent,
+
   } = useGameLogic();
   const [id,setID]=useState(1);
 
@@ -37,6 +39,7 @@ export default function GamePage() {
         <button onClick={() => killMonsterAt(0)}>🗡️ 擊殺第1隻怪物</button>
         <button onClick={() => killMonsterAt(1)}>🗡️ 擊殺第2隻怪物</button>
         <button onClick={() => killMonsterAt(2)}>🗡️ 擊殺第3隻怪物</button>
+        <button onClick={triggerRandomEvent}>隨機事件</button>
       </div>
 
       <div className="middle-section">
