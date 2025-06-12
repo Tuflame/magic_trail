@@ -1,16 +1,9 @@
-import React from "react";
+import "./MonsterQueue.css"
 import type { Monster } from "../hook/GameLogic";
 import MonsterCard from "./MonsterCard";
 
-import "./MonsterQueue.css"
-
-type MonsterQueueProps = {
-  monsters: Monster[];
-};
-
-export function MonsterQueue({monsters}: MonsterQueueProps) {
+export function MonsterQueue({ monsters }: { monsters: Monster[] }) {
   // 取得第 4~6 隻怪物
-
   return (
     <div className="monsterquque-grid">
         <div className="section-header">
