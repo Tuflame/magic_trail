@@ -6,6 +6,92 @@ export type SpellCardType = "冰凍法術" | "爆裂法術" | "毒藥法術";
 export type AttackCardType = "魔法棒" | SpellCardType
 export type GamePhase = "事件" | "準備" | "行動" | "結算";
 
+export type EventEffect = {
+  description: string;
+  applyEffect: () => void; // 之後可傳入 context 做出真實影響
+};
+
+export type GameEvent = {
+  name: string;
+  description: string;
+  effects?: EventEffect[];
+};
+
+// 主事件表
+const eventTable: GameEvent[] = [
+  {
+    name: "無事件",
+    description: "本回合風平浪靜，什麼也沒發生。",
+  },
+  {
+    name: "旅行商人",
+    description: "出現旅行商人，玩家可以花費金幣購買武器或道具。",
+  },
+  {
+    name: "精靈的祝福",
+    description: "精靈降臨，所有玩家獲得 +1 魔能石。",
+    effects: [
+      {
+        description: "所有玩家 +1 魔能石",
+        applyEffect: () => {
+          console.log("🌟 所有玩家魔能石 +1");
+          // 可設計 setPlayers(p => ...) 加值處理
+        },
+      },
+    ],
+  },
+  {
+    name: "元素紊亂",
+    description: "元素能量混亂，以下隨機一種效果生效：",
+    effects: [
+      {
+        description: "元素剋制關係失效",
+        applyEffect: () => {
+          console.log("⚡ 剋制關係失效，本回合不計屬性差異");
+        },
+      },
+      {
+        description: "所有攻擊視為無屬性",
+        applyEffect: () => {
+          console.log("⚡ 所有攻擊為無屬性攻擊");
+        },
+      },
+      {
+        description: "怪物屬性混亂（隨機洗牌）",
+        applyEffect: () => {
+          console.log("⚡ 所有怪物屬性重新分配");
+        },
+      },
+    ],
+  },
+  {
+    name: "哥布林襲擊",
+    description: "3隻哥布林衝入列隊，血量3，擊殺可得 1 金幣。",
+    effects: [
+      {
+        description: "生成 3 隻哥布林進入列隊",
+        applyEffect: () => {
+          console.log("🗡️ 生成哥布林 x3");
+          // 你可以呼叫 generateMonster("木", "野蠻哥布林", 3) 這類方法
+        },
+      },
+    ],
+  },
+  {
+    name: "掏金熱",
+    description: "本回合擊殺怪物獲得雙倍金幣。",
+    effects: [
+      {
+        description: "擊殺怪物金幣 x2",
+        applyEffect: () => {
+          console.log("💰 本回合擊殺金幣加倍！");
+          // 可設 flag，結算階段時金幣 *2
+        },
+      },
+    ],
+  },
+];
+
 export type Player = {
   id: number;
   name: string;
@@ -238,7 +324,31 @@ export function useGameLogic(){
       return [...prev.slice(1), prev[0]];
     });
   };
+  /*========================================*/
+  //事件區
+  const [event,setEvent]=useState<GameEvent>();
+  //隨機事件
+  const triggerRandomEvent = () => {
+    const randomIndex = Math.floor(Math.random() * eventTable.length);
+    const selected = eventTable[randomIndex];
 
+    // 如果事件有多個效果，從中抽一個
+    if (selected.effects && selected.effects.length > 0) {
+      const randomEffectIndex = Math.floor(Math.random() * selected.effects.length);
+      const chosenEffect = selected.effects[randomEffectIndex];
+
+      // 建立新事件物件，描述為實際選到的效果內容
+      const appliedEvent: GameEvent = {
+        ...selected,
+        description: chosenEffect.description,
+      };
+
+      chosenEffect.applyEffect?.();
+      setEvent(appliedEvent);
+    } else {
+      setEvent(selected);
+    }
+  };
   // 回傳 Hook 提供的狀態和函式
   return {
     turn,
@@ -251,6 +361,7 @@ export function useGameLogic(){
     generateMonster,
     killMonsterAt,
     movePlayerToFront,
-    rotatePlayers
+    rotatePlayers,
+    event
   };
 }
