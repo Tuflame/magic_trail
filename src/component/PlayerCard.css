@@ -1,0 +1,46 @@
+.player-card {
+  border: 2px solid #ccc;      /* 邊框顏色 */
+  border-radius: 12px;         /* 圓角大小 */
+  padding: 16px;               /* 內距 */
+  /* max-width: 150px;             */
+  background-color: #f9f9f9;   /* 背景色（可調） */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* 陰影 */
+  margin-bottom: 2px;         /* 與其他卡片間距 */
+}
+
+.player-header{
+  display: flex;  
+  gap: 20px;
+}
+
+
+
+.player-attributes {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;            /* 和標題間距 */
+}
+
+.attribute {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.water {
+  background-color: blue;
+}
+
+.fire {
+  background-color: red;
+}
+
+.wood {
+  background-color: green;
+}
