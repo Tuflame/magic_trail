@@ -1,0 +1,32 @@
+/* EventCard.css */
+
+.Event-card {
+  width: 250px;
+  height: 405px;
+  background-color: #f9f9f9;   /* 背景色（可調） */
+  border-radius: 8px;
+  border-color: black;
+  box-shadow: 0 0 8px rgba(0,0,0,0.7);
+  padding: 12px;
+  justify-content: space-between;
+  user-select: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  flex-shrink: 0; /* 不要自動壓縮 */
+}
+
+.Event-card-body {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.Event-image {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.Event-name , .Event-description{
+  font-size: 25px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}

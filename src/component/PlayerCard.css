@@ -11,6 +11,9 @@
 .player-header{
   display: flex;  
   gap: 20px;
+  font-weight: bold;
+    color: black;
+
 }
 
 

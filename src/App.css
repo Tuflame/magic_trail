@@ -27,7 +27,7 @@ body, html, #root {
   gap: 20px;
 }
 
-.left-section, .right-section {
+.left-section, .middle-section, .right-section  {
   background-color: white;
   border-radius: 8px;
   padding: 20px;
@@ -37,15 +37,29 @@ body, html, #root {
 
 /* 左邊固定寬度 */
 .left-section {
-  width: 300px;
+  width: 350px;
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
 /* 右邊自動撐滿剩下空間 */
-.right-section {
+.middle-section {
+  width: 350px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+}
+
+
+/* 右邊自動撐滿剩下空間 */
+.right-section {
+  /* background-color: white; */
+
+  width: 370px;
+  /* flex: 1; */
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -62,10 +76,33 @@ body, html, #root {
 
 /* 隊列固定高度 */
 .queue-wrapper {
-  height: 300px;
+  height: 325px;
   overflow-y: auto;
-
+   overflow: hidden;
 }
+
+
+
+/* 戰場區域撐滿剩下空間 */
+.WorldEvent-wrapper {
+  background-color: #f9f9f9;   /* 背景色（可調） */
+  border-color: black;
+  border-radius: 8px;
+  height: 500px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* 隊列固定高度 */
+.log-wrapper {
+  border-color: black;
+
+  background-color: #f9f9f9;   /* 背景色（可調） */
+  border-radius: 8px;
+  height: 500px;
+  overflow-y: auto;
+}
+
 
 /* 內容區塊樣式 */
 .box {
@@ -82,19 +119,19 @@ body, html, #root {
   gap: 15px;                /* 元素間間距 */
   height: 100%;
 }
-
+/* 
 .battlefield-Monsters-wrapper {
   flex: 1;                  /* 撐滿剩餘空間 */
-  background-color: #f9fafb;
+  /* background-color: #f9fafb;
   border-radius: 8px;
   padding: 10px;
-  overflow-y: auto;
-}
+  overflow-y: auto; */
+/* } */
 
-.queue-Monsters-wrapper {
-  width: 250px;             /* 固定寬度，可調整 */
-  background-color: #f3f4f6;
+/* .queue-Monsters-wrapper {
+  width: 250px;             固定寬度，可調整 */
+  /* background-color: #f3f4f6;
   border-radius: 8px;
   padding: 10px;
   overflow-y: auto;
-}
+} */ 
