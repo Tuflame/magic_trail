@@ -9,29 +9,29 @@ import type {Player,Monster} from "./hook/GameLogic"
 
 export default function GamePage() {
   const {
+    players,
     battleFieldMonster,
     queueMonster,
     generatePlayer,
     generateMonster,
-    clearMonsters,
-    killMonsterAt
+    killMonsterAt,
+    movePlayerToFront,
+    rotatePlayers
   } = useGameLogic();
 
-  const [players,setPlayers]=useState<Player[]>([]);
+  const [id,setID]=useState(1);
 
-  const handleGeneratePlayer=()=>{
-    for(let i=1;i<=6;i++){
-        const newPlayer=generatePlayer(i,"挑戰者")
-        setPlayers(prev=>[...prev,newPlayer]);      
-    }
+  const plus=()=>{
+    setID((prev)=>(prev+1));
   }
-
-  return (
+   return (
     <div className="main-container">
       <div className="left-section">
         <Order players={players}></Order>
         <h2>控制區</h2>
-        <button onClick={handleGeneratePlayer}>生成玩家</button>
+        <button onClick={() => {generatePlayer(id, `玩家${id}`),plus()}}>生成玩家</button>
+        <button onClick={() => movePlayerToFront(3)}>將第3往前調動</button>
+        <button onClick={rotatePlayers}>調動</button>
         <button onClick={generateMonster}>生成怪物</button>
         <button onClick={() => killMonsterAt(0)}>🗡️ 擊殺第1隻怪物</button>
         <button onClick={() => killMonsterAt(1)}>🗡️ 擊殺第2隻怪物</button>
@@ -45,3 +45,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+

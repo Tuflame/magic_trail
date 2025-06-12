@@ -14,9 +14,13 @@ export function Battlefield({ monsters}: BattlefieldProps) {
         <h2 className="section-title">戰場區域</h2>
       </div>
       <div className="battlefield-grid">
-        {monsters.map((monster) => (
-          <MonsterCard monster={monster} />
-        ))}
+        {monsters.map((monster, idx) =>
+            monster ? (
+              <MonsterCard key={idx} monster={monster} />
+            ) : (
+              <div key={idx} className="monster-slot empty">（空）</div>
+            )
+)}
       </div>
     </div>
   );

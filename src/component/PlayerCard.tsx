@@ -10,7 +10,7 @@ export default function PlayerCard({player}:OrderProps){
           <div className="player-header">
             <div className="player-number">{player.id}</div>
             <div className="player-name">{player.name}</div>
-            <div className="player_gold">{player.gold}</div>
+            <div className="player_gold">{player.loot.gold}</div>
           </div>
           <div className="player-attributes">
             <div className="attribute water">{player.attack.水}</div>

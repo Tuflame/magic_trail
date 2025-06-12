@@ -2,6 +2,10 @@ import { useState } from "react";
 
 export type ElementType = "火" | "水" | "木" | "無";
 
+export type SpellCardType = "冰凍法術" | "爆裂法術" | "毒藥法術";
+export type AttackCardType = "魔法棒" | SpellCardType
+export type GamePhase = "事件" | "準備" | "行動" | "結算";
+
 export type Player = {
   id: number;
   name: string;
@@ -10,14 +14,12 @@ export type Player = {
     水: number;
     木: number;
   },
-  manaStone: number;
-  gold: number;
-  attackCard:Record<AttackCardType,number>
+  loot: {
+      gold: number;
+      manaStone: number;
+      spellCards:Record<AttackCardType,number>
+  };
 };
-
-export type AttackCardType = "魔法棒" | "冰凍法術" | "爆裂法術" | "毒藥法術";
-export type SpellCardType = "冰凍法術" | "爆裂法術" | "毒藥法術";
-
 
 export type AttackAction = {
   playerId: number;
@@ -39,13 +41,18 @@ export type Monster = {
   };
 };
 
-type GamePhase = "事件" | "準備" | "行動" | "結算";
-
 const monsterNameTable: Record<ElementType, string[]> = {
-  火: ["火史萊姆", "炙熱哥布林"],
+  火: ["火史萊姆", "炙熱哥布林","火焰蜥蜴"],
   水: ["水史萊姆", "高冷哥布林"],
   木: ["草史萊姆", "野蠻哥布林"],
   無: ["骷髏", "鬼魂"],
+};
+
+const weaknessMap: Record<ElementType, ElementType> = {
+    火: "木",
+    木: "水",
+    水: "火",
+    無: "無",
 };
 
 export function useGameLogic(){
@@ -152,37 +159,28 @@ export function useGameLogic(){
   const [battleFieldMonster,setBattleFieldMonster]=useState<Monster[]>([]);
   const [queueMonster,setQueueMonster]=useState<Monster[]>([]);
 
- const killMonsterAt = (index: number) => {
+  const killMonsterAt = (index: number) => {
     const battlefield = [...battleFieldMonster];
     const queue = [...queueMonster];
 
-    // 若沒有等待怪補上就什麼都不做
-    if (!queue.length) return;
+    if (queue.length > 0) {
+      const newMonster = queue.shift()!;
+      battlefield[index] = newMonster;
+      setQueueMonster(queue);
+    } else {
+      // 沒怪可補，該位置清空
+      battlefield[index] = undefined as unknown as Monster;
+    }
 
-    // 替補新怪上來
-    const newMonster = queue[0];
-    battlefield[index] = newMonster;
-
-    // 更新 queue：移除剛補上來的
-    const updatedQueue = queue.slice(1);
-
-    // 更新狀態
     setBattleFieldMonster(battlefield);
-    setQueueMonster(updatedQueue);
-    setMonsters([...battlefield, ...updatedQueue]); // 🧠 確保同步主 monsters 狀態
+    setMonsters([...battlefield.filter(Boolean), ...queue]);
   };
+
 
   const [attackQueue, setAttackQueue] = useState<AttackAction[]>([]);
 
   const submitAttack = (action: AttackAction) => {
     setAttackQueue((prev) => [...prev, action]);
-  };
-
-  const weaknessMap: Record<ElementType, ElementType> = {
-    火: "木",
-    木: "水",
-    水: "火",
-    無: "無",
   };
 
   const elementCycle = (type:ElementType):ElementType => {
@@ -198,17 +196,10 @@ export function useGameLogic(){
         return "無"
     }
   };
-
-  const elementCycleMap:Record<ElementType, ElementType> = {
-    火: "木",
-    木: "水",
-    水: "火",
-    無: "無",
-  };
-
+  /*========================================*/
+  //玩家區
   const [players, setPlayers] = useState<Player[]>([]);
-  
-
+  //生成玩家
   const generatePlayer = (_id: number, _name: string): Player => {
     const newPlayer: Player = {
       id: _id,
@@ -218,23 +209,34 @@ export function useGameLogic(){
         水: 1,
         木: 1,
       },
-      manaStone: 2,
-      gold: 0,
-      attackCard: {
-        魔法棒:1,
-        冰凍法術: 0,
-        爆裂法術: 0,
-        毒藥法術: 0,
-      },
+      loot:{
+        gold: 0,
+        manaStone: 2,
+        spellCards:{
+          魔法棒:1,
+          冰凍法術: 0,
+          爆裂法術: 0,
+          毒藥法術: 0,
+        }
+      }
     };
     setPlayers((prev) => [...prev, newPlayer]);
     return newPlayer;
   };
-
-
-  // 清空怪獸陣列
-  const clearMonsters = (): void => {
-    setMonsters([]);
+  //順序調動卡
+  const movePlayerToFront = (playerId: number) => {
+    setPlayers(prev => {
+      const rest = prev.filter(p => p.id !== playerId);
+      const target = prev.find(p => p.id === playerId);
+      return target ? [target, ...rest] : prev;
+    });
+  };
+  //順序輪轉
+  const rotatePlayers = () => {
+    setPlayers(prev => {
+      if (prev.length <= 1) return prev;
+      return [...prev.slice(1), prev[0]];
+    });
   };
 
   // 回傳 Hook 提供的狀態和函式
@@ -247,7 +249,8 @@ export function useGameLogic(){
     battleFieldMonster,
     queueMonster,
     generateMonster,
-    clearMonsters,
-    killMonsterAt
+    killMonsterAt,
+    movePlayerToFront,
+    rotatePlayers
   };
 }
