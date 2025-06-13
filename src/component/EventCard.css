@@ -1,14 +1,14 @@
-h2.section-title {
-  text-align: center;
-  font-size: 30px !important;/* 調整成你想要的大小 */
-  font-weight: 700;
-  color: #f39c12;
+.Event-name {
+  font-size: 30px;
+  font-weight: 500;
 }
 
-  /* display: flex;  */
-  /* justify-content: space-between; */
 
-
-.battlefield{
-  /* justify-content: space-between; */
+.Event-description {
+  font-size: 28px;
+  font-weight: 400;
+  margin: 0;
 }
+
+
+

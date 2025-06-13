@@ -50,15 +50,6 @@ body, html, #root {
   gap: 15px;
 }
 
-/* 中間自動撐滿剩下空間 */
-.middle-section {
-  flex:6;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;       /* 如果超出寬度，自動顯示橫向捲軸 */
-}
-
 
 /* 右邊自動撐滿剩下空間 */
 .right-section {
@@ -70,13 +61,26 @@ body, html, #root {
   height: 100%;
 }
 
+
+
+/* 中間自動撐滿剩下空間 */
+.middle-section {
+  flex:6;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* ⬅️ 這行關鍵！強制它不要撐開 */
+  overflow: hidden;       /* 如果超出寬度，自動顯示橫向捲軸 */
+}
+
 /* 戰場區域撐滿剩下空間 */
 .battlefield-wrapper {
   flex: 4;
+  min-height: 0; /* 防止撐開 */
 }
 
 /* 隊列固定高度 */
 .queue-wrapper {
+  min-height: 0; /* 防止撐開 */
   flex: 3;
 }
 
@@ -98,6 +102,7 @@ body, html, #root {
 
 /* 戰場區域撐滿剩下空間 */
 .WorldEvent-container {
+  font-size: 25px;
   display: flex;              
   align-items: center;        
   justify-content: center;    
@@ -107,7 +112,7 @@ body, html, #root {
 .log-wrapper {
   flex:4;
   border-color: black;
-  background-color: #f9f9f9;   
+  background-color: #f9f9f98b;   
   border-radius: 8px;
   height: 500px;
   overflow-y: auto;
