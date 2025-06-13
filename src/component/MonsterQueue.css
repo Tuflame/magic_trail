@@ -1,11 +1,12 @@
 /* MonsterQueue.css */
 
-.monsterquque-grid {
+.monsterqueue-grid {
+  flex: 1;
   padding: 12px;
   border-radius: 8px;
-  color: #eee;
   user-select: none;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;     
 }
 
 .section-header {
@@ -18,11 +19,4 @@
   color: #f39c12;
 }
 
-/* 這裡是怪物列表容器 */
-.monsterquque-grid > div:last-child {
-  display: flex;              /* 啟用 Flexbox */
-  flex-direction: row;        /* 水平排列 */
-  gap: 14px;                  /* 卡片間距 */
-  overflow-x: auto;           /* 橫向超出時出現滾動條 */
-  padding-bottom: 8px;
-}
+
