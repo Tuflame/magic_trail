@@ -270,7 +270,6 @@ export function useGameLogic(){
     setAttackQueue((prev) => [...prev, action]);
   };
 
-  const 
 
   const elementCycle = (type:ElementType):ElementType => {
     switch (type){

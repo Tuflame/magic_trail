@@ -1,9 +1,11 @@
 .battlefield-rowContainer {
+  height: 500px;
   display: flex;          /* 啟用 Flexbox */
   flex-direction: row;    /* 水平排列（預設就是 row） */
+  flex-wrap: nowrap;       /* 不換行：單行 */
   gap: 16px;              /* 每個卡片的間距，可依需求調整 */
   overflow-x: auto;       /* 如果超出寬度，自動顯示橫向捲軸 */
-  padding: 8px 0;         /* 上下留點空間 */
+  padding: 16px 8px;         /* 上下留點空間 */
 }
 
 .section-title {

@@ -12,32 +12,32 @@
 body, html, #root {
   margin: 0;
   padding: 0;
-  height: 100%;
+  height: 100%;  
   width: 100%;
   font-family: Arial, sans-serif;
   background-color: #f0f2f5;
 }
 
 .main-container {
-  background-image: url('../assets/background.png');
-  background-size: cover;         /* 等比例鋪滿整個畫面 */
-  background-position: center;    /* 置中對齊 */
-  background-repeat: no-repeat;   /* 不重複拼貼 */
+  background-image: url('../assets/background/background.png');
+  background-size: cover;         
+  background-position: center;    
+  background-repeat: no-repeat;  
   display: flex;
-  height: 100vh;    /* 撐滿整個視窗高度 */
-  width: 100vw;     /* 撐滿整個視窗寬度 */
+  height: 100vh;    
+  width: 100vw;     
   padding: 30px;
   box-sizing: border-box;
   gap: 20px;
 }
 
 .left-section, .middle-section, .right-section  {
-  background: rgba(255, 255, 255, 0.15); /* 半透明背景 */
+  background: rgba(255, 255, 255, 0.15); 
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  backdrop-filter: blur(8px);           /* ✅ 霧化關鍵 */
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);           
+      border: 1px solid rgba(255, 255, 255, 0.3);
   overflow-y: auto;
 }
 
@@ -55,8 +55,8 @@ body, html, #root {
   flex:6;
   display: flex;
   flex-direction: column;
-  gap: 15px;
   height: 100%;
+  overflow: hidden;       /* 如果超出寬度，自動顯示橫向捲軸 */
 }
 
 
@@ -72,14 +72,12 @@ body, html, #root {
 
 /* 戰場區域撐滿剩下空間 */
 .battlefield-wrapper {
-  flex: 3;
-  overflow: hidden;
+  flex: 4;
 }
 
 /* 隊列固定高度 */
 .queue-wrapper {
-  flex: 2;
-  overflow: hidden;
+  flex: 3;
 }
 
 
@@ -87,22 +85,22 @@ body, html, #root {
 /* 戰場區域撐滿剩下空間 */
 .WorldEvent-wrapper {
   flex: 2;
-  overflow: hidden;/*
+  overflow: hidden;
   border-radius: 8px;
   display: flex;
   flex:2;
   flex-direction: column;
   height: 500px;
   overflow-y: auto;
-  min-width: 0;*/
+  min-width: 0;
 
 }
 
 /* 戰場區域撐滿剩下空間 */
 .WorldEvent-container {
-  display: flex;              /* 一定要有這行 */
-  align-items: center;        /* 垂直置中 */
-  justify-content: center;    /* 水平置中 */
+  display: flex;              
+  align-items: center;        
+  justify-content: center;    
 }
 
 /* 隊列固定高度 */
@@ -131,6 +129,8 @@ body, html, #root {
   gap: 15px;                /* 元素間間距 */
   height: 100%;
 }
+
+
 /* 
 .battlefield-Monsters-wrapper {
   flex: 1;                  /* 撐滿剩餘空間 */

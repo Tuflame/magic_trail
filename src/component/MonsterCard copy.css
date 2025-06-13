@@ -3,38 +3,31 @@
 /* MonsterCard.css */
 
 .monster-card {
-  min-width: 150px; 
-  max-width: 300px; 
-  /* max-height: 557px; 可依比例算出來 */
+  /* min-width:  250px;
+  min-height: 405px; */
+  max-width:  250px;
+  max-height: 405px; 
+
+  /*max-width: 350px; /* 可依你需求調整 */
+  /*max-height: 557px; /* 可依比例算出來 */
   aspect-ratio: 250/405;
-  display: flex;
+
   flex: 1;
-  justify-content: space-between;
-  flex-direction: column;
   background-color: #222;
   border-radius: 8px;
   box-shadow: 0 0 8px rgba(0,0,0,0.7); 
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-} 
 
 
-.MonsterQueue-rowContainer > .monster-card {
-  width: 150px !important;
-  max-width: 150px;
-  min-width: 150px;
-  flex: 0 0 auto; /* 若父層是 flex，要防止它被拉長 */
-  box-sizing: border-box; /* 避免 padding 撐爆寬度 */
-} 
+}
 
 
-.MonsterQueue-rowContainer {
-  display: flex;              /* 啟用 Flexbox */
-  flex-direction: row;        /* 水平排列 */
-  gap: 14px;                  /* 卡片間距 */
-  padding-bottom: 8px;
-} 
-
+/* 你可以依 monster.type 加不同背景色 */
 
 .monster-card[data-type="火"] {
   color: #e74c3c; /* 這會改變整個卡片文字顏色 */
@@ -53,6 +46,11 @@
 }
 
 
+
+
+
+
+
 .monster-card-header {
   display: flex;
   justify-content: space-between;
@@ -61,6 +59,9 @@
   margin-bottom: 8px;
 }
 
+.monster-type {
+  text-transform: uppercase;
+}
 
 .monster-health {
   color: #e74c3c;
@@ -91,3 +92,19 @@
   min-height: 20px;
 }
 
+
+
+.monster-card-small {
+  width: 150px;       /* 比正常的 180px 小 */
+  height: 243px;       /* 比正常的 180px 小 */
+  font-size: 12px;    /* 縮小字體 */
+  padding: 8px;
+}
+
+.monster-card-small .monster-image {
+  font-size: 32px;    /* 縮小怪物圖片 */
+}
+
+.monster-card-small .monster-name {
+  font-size: 14px;
+}
