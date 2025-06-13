@@ -1,4 +1,4 @@
-import { useState ,useEffect } from "react";
+import { useState ,useEffect ,useRef} from "react";
 
 export type ElementType = "火" | "水" | "木" | "無";
 
@@ -155,29 +155,41 @@ export function useGameLogic(){
   /*========================================*/
   //回合
   const [turn, setTurn] = useState(1);
-  const nextTurn = () => {
+const [phase, setPhase] = useState<GamePhase>("事件");
+const previousPhaseRef = useRef<GamePhase>("結算");
+
+// 階段推進副作用（不含 nextTurn）
+useEffect(() => {
+  if (phase === "事件") {
+    triggerRandomEvent();
+  } else if (phase === "行動") {
+    executeActionPhase();
+  }
+
+  // 檢查是否從「結算」切到「事件」，若是才加回合
+  if (previousPhaseRef.current === "結算" && phase === "事件") {
     setTurn((t) => t + 1);
-  };
-  /*========================================*/
-  //階段
-  const [phase, setPhase] = useState<GamePhase>("事件");
-  const advancePhase = () => {
-    setPhase((prev) => {
-      switch (prev) {
-        case "事件":
-          triggerRandomEvent();
-          return "準備";
-        case "準備":
-          return "行動";
-        case "行動":
-          executeActionPhase();
-          return "結算";
-        case "結算":
-          nextTurn(); // 回合加1
-          return "事件"; // 新回合重新開始
-      }
-    });
-  };
+  }
+
+  previousPhaseRef.current = phase;
+}, [phase]);
+
+const advancePhase = () => {
+  setPhase((prev) => {
+    switch (prev) {
+      case "事件":
+        return "準備";
+      case "準備":
+        return "行動";
+      case "行動":
+        return "結算";
+      case "結算":
+        return "事件";
+    }
+  });
+};
+
+
   /*========================================*/
   //怪獸
   const [battleFieldMonsters, setBattleFieldMonsters] = 
@@ -463,7 +475,6 @@ export function useGameLogic(){
   // 回傳 Hook 提供的狀態和函式
   return {
     turn,
-    nextTurn,
     players,
     generatePlayer,
     battleFieldMonster: battleFieldMonsters,
