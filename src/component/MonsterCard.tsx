@@ -24,12 +24,9 @@ export default function MonsterCard({ monster, size = "normal"  }: MonsterCardPr
 
       <footer className="monster-card-footer">
         <div className="monster-loot">
-          {/* 範例：放置金幣、魔能石、法術卡等戰利品 */}
-          {/* 
           {monster.loot.gold > 0 && <div>💰 金幣：{monster.loot.gold}</div>}
           {monster.loot.manaStone > 0 && <div>🔷 魔能石：{monster.loot.manaStone}</div>}
           {monster.loot.spellCards && <div>🧪 法術卡：{monster.loot.spellCards}</div>}
-          */}
         </div>
       </footer>
     </div>

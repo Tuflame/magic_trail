@@ -18,7 +18,7 @@ export default function GamePage({ game }: { game: GameLogicType }) {
     queueMonster,
     generateMonster,
     killMonsterAt,
-    movePlayerToFront,
+    movePlayerIndexToFront,
     rotatePlayers,
     triggerRandomEvent,
     event,
@@ -34,7 +34,7 @@ export default function GamePage({ game }: { game: GameLogicType }) {
         <Order players={players} />
         <h2>控制區</h2>
         <button onClick={() => {generatePlayer(id, `魔法師${id}`),plus()}}>生成玩家</button>
-        <button onClick={() => movePlayerToFront(3)}>將第3往前調動</button>
+        <button onClick={() => movePlayerIndexToFront(3)}>將第3往前調動</button>
         <button onClick={rotatePlayers}>調動</button>
         <button onClick={generateMonster}>生成怪物</button>
         <button onClick={() => killMonsterAt(0)}>🗡️ 擊殺第1隻怪物</button>

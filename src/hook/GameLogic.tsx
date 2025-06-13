@@ -122,8 +122,14 @@ export type Monster = {
   };
 };
 
+export type BattleFieldMonster={
+  moster:Monster;
+  poisonrd:boolean;
+  iced:boolean;
+}
+
 const monsterNameTable: Record<ElementType, string[]> = {
-  火: ["火史萊姆", "炙熱哥布林","火焰蜥蜴"],
+  火: ["火史萊姆", "炙熱哥布林","火精靈"],
   水: ["水史萊姆", "高冷哥布林"],
   木: ["草史萊姆", "野蠻哥布林","Bur Bur Patapim"],
   無: ["骷髏", "鬼魂"],
@@ -197,7 +203,7 @@ export function useGameLogic(){
     let spellCards: SpellCardType | null = null;
 
     // 第一個戰利品（必定出現）
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.6) {
       gold += 1;
     } else {
       manaStone += 1;
@@ -205,7 +211,7 @@ export function useGameLogic(){
 
     // 第二個戰利品（50% 機率出現）
     if (Math.random() < 0.5) {
-      if (Math.random() < 0.65) {
+      if (Math.random() < 0.4) {
         gold += 1;
       } else {
         spellCards = getRandomSpellCard();
@@ -237,7 +243,7 @@ export function useGameLogic(){
     return newMonster;
   };
 
-  const [battleFieldMonster,setBattleFieldMonster]=useState<Monster[]>([]);
+  const [battleFieldMonster,setBattleFieldMonster]=useState<BattleFieldMonster[]>([]);
   const [queueMonster,setQueueMonster]=useState<Monster[]>([]);
 
   const killMonsterAt = (index: number) => {
@@ -263,6 +269,8 @@ export function useGameLogic(){
   const submitAttack = (action: AttackAction) => {
     setAttackQueue((prev) => [...prev, action]);
   };
+
+  const 
 
   const elementCycle = (type:ElementType):ElementType => {
     switch (type){
@@ -305,11 +313,15 @@ export function useGameLogic(){
     return newPlayer;
   };
   //順序調動卡
-  const movePlayerToFront = (playerId: number) => {
+  const movePlayerIndexToFront = (index: number) => {
+    index-=1;
     setPlayers(prev => {
-      const rest = prev.filter(p => p.id !== playerId);
-      const target = prev.find(p => p.id === playerId);
-      return target ? [target, ...rest] : prev;
+      if (index <= 0 || index >= prev.length) return [...prev]; // 無需移動或 index 無效
+
+      const target = prev[index];
+      const rest = prev.filter((_, i) => i !== index);
+
+      return [target, ...rest];
     });
   };
   //順序輪轉
@@ -363,7 +375,7 @@ export function useGameLogic(){
     queueMonster,
     generateMonster,
     killMonsterAt,
-    movePlayerToFront,
+    movePlayerIndexToFront,
     rotatePlayers,
     event,
     triggerRandomEvent

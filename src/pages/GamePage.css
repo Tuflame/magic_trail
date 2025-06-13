@@ -62,7 +62,7 @@ body, html, #root {
 
 /* 右邊自動撐滿剩下空間 */
 .right-section {
-  flex:1;
+  flex:2;
   min-width: 250px;
   display: flex;
   flex-direction: column;
@@ -74,14 +74,11 @@ body, html, #root {
 .battlefield-wrapper {
   flex: 3;
   overflow: hidden;
-  min-width: 0;
-  /* height: 250px; */
 }
 
 /* 隊列固定高度 */
 .queue-wrapper {
   flex: 2;
-  height: 325px;
   overflow: hidden;
 }
 
@@ -89,14 +86,15 @@ body, html, #root {
 
 /* 戰場區域撐滿剩下空間 */
 .WorldEvent-wrapper {
+  flex: 2;
+  overflow: hidden;/*
   border-radius: 8px;
-  
   display: flex;
+  flex:2;
   flex-direction: column;
-  background-color: #f9f9f9;  
   height: 500px;
   overflow-y: auto;
-  min-width: 0;
+  min-width: 0;*/
 
 }
 
@@ -109,6 +107,7 @@ body, html, #root {
 
 /* 隊列固定高度 */
 .log-wrapper {
+  flex:4;
   border-color: black;
   background-color: #f9f9f9;   
   border-radius: 8px;
