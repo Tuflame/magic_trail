@@ -1,26 +1,40 @@
 .player-card {
-  border: 2px solid #ccc;      /* 邊框顏色 */
-  border-radius: 12px;         /* 圓角大小 */
-  padding: 16px;               /* 內距 */
-  /* max-width: 150px;             */
-  background-color: #f9f9f9;   /* 背景色（可調） */
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* 陰影 */
-  margin-bottom: 2px;         /* 與其他卡片間距 */
+  background-color: #f9f9f9;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 16px; 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 2px;
 }
 
 .player-header{
-  display: flex;  
-  gap: 20px;
+  display: flex;
   font-weight: bold;
-    color: black;
+  color: black;
+}
 
+.player-header .id {
+  flex: 2;
+  text-align: center;
+}
+.player-header .name {
+  flex: 3;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.player-header .gold {
+  flex: 2;
+  text-align: center;
 }
 
 .player-attributes {
   display: flex;
-  gap: 10px;
+  justify-content:space-between; /* ✅ 三欄平均分散 */
+  align-items:safe;            /* ✅ 垂直置中（可選） */
   margin-top: 12px;            /* 和標題間距 */
 }
+
 
 .attribute {
   display: flex;
@@ -35,7 +49,7 @@
 }
 
 .water {
-  background-color: blue;
+  background-color: darkblue;
 }
 
 .fire {
@@ -43,5 +57,5 @@
 }
 
 .wood {
-  background-color: green;
+  background-color: forestgreen;
 }

@@ -6,7 +6,12 @@
   padding: 8px 0;         /* 上下留點空間 */
 }
 
+/* .battlefield-rowContainer > div{
+
+} */
+
 
 .section-title {
+  text-align: center;
   font-size: 30px !important;/* 調整成你想要的大小 */
 }
