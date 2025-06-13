@@ -1,91 +1,9 @@
 import { useState ,useEffect ,useRef} from "react";
 
 export type ElementType = "火" | "水" | "木" | "無";
-
 export type SpellCardType = "冰凍法術" | "爆裂法術" | "毒藥法術";
 export type AttackCardType = "魔法棒" | SpellCardType
 export type GamePhase = "事件" | "準備" | "行動" | "結算";
-
-export type EventEffect = {
-  description: string;
-  applyEffect: () => void; // 之後可傳入 context 做出真實影響
-};
-
-export type GameEvent = {
-  name: string;
-  description: string;
-  effects?: EventEffect | EventEffect[];
-};
-
-// 主事件表
-const eventTable: GameEvent[] = [
-  {
-    name: "無事件",
-    description: "本回合風平浪靜，什麼也沒發生。",
-  },
-  {
-    name: "旅行商人",
-    description: "出現旅行商人，玩家可以花費金幣購買武器或道具。",
-  },
-  {
-    name: "精靈的祝福",
-    description: "精靈降臨，所有玩家獲得 +1 魔能石。",
-    effects: {
-      description: "所有玩家 +1 魔能石",
-      applyEffect: () => {
-        console.log("🌟 所有玩家魔能石 +1");
-        // 可設計 setPlayers(p => ...) 加值處理
-      },
-    },
-  },
-  {
-    name: "元素紊亂",
-    description: "元素能量混亂，以下隨機一種效果生效：",
-    effects: [
-      {
-        description: "元素剋制關係失效",
-        applyEffect: () => {
-          console.log("⚡ 剋制關係失效，本回合不計屬性差異");
-        },
-      },
-      {
-        description: "所有攻擊視為無屬性",
-        applyEffect: () => {
-          console.log("⚡ 所有攻擊為無屬性攻擊");
-        },
-      },
-      {
-        description: "怪物屬性混亂（隨機洗牌）",
-        applyEffect: () => {
-          console.log("⚡ 所有怪物屬性重新分配");
-        },
-      },
-    ],
-  },
-  {
-    name: "哥布林襲擊",
-    description: "3隻哥布林衝入列隊，血量3，擊殺可得 1 金幣。",
-    effects: {
-      description: "生成 3 隻哥布林進入列隊",
-      applyEffect: () => {
-        console.log("🗡️ 生成哥布林 x3");
-        // 你可以呼叫 generateMonster("木", "野蠻哥布林", 3) 這類方法
-      },
-    },
-  },
-  {
-    name: "掏金熱",
-    description: "本回合擊殺怪物獲得雙倍金幣。",
-    effects: {
-      description: "擊殺怪物金幣 x2",
-      applyEffect: () => {
-        console.log("💰 本回合擊殺金幣加倍！");
-        // 可設 flag，結算階段時金幣 *2
-      },
-    },
-  },
-];
-
 
 export type Player = {
   id: number;
@@ -102,14 +20,6 @@ export type Player = {
   };
 };
 
-export type AttackAction = {
-  playerId: number;
-  battleFieldIndex: number; // 對應戰場中第幾隻怪物（0~2）
-  cardType: AttackCardType;
-  element?: ElementType; // 僅魔法棒需要
-  power?: number; // 僅魔法棒需要（例如基礎攻擊力）
-};
-
 export type Monster = {
   maxHP: number;
   HP: number;
@@ -120,6 +30,7 @@ export type Monster = {
     manaStone: number;
     spellCards: SpellCardType|null;
   };
+  imageUrl?:string;
 };
 
 export type BattleFieldMonster={
@@ -130,71 +41,144 @@ export type BattleFieldMonster={
 
 export type BattleFieldSlot = BattleFieldMonster | null;
 
-const monsterNameTable: Record<ElementType, string[]> = {
-  火: ["火史萊姆", "炙熱哥布林","火精靈"],
-  水: ["水史萊姆", "高冷哥布林"],
-  木: ["草史萊姆", "野蠻哥布林","Bur Bur Patapim"],
-  無: ["骷髏", "鬼魂"],
+export type BattleLog = {
+  turn: number;
+  message: string;
 };
 
-const elementCounterMap: Record<ElementType, ElementType> = {
-  火: "木",
-  木: "水",
-  水: "火",
-  無: "無",
+export type EventEffect = {
+  description: string;
+  weighted?:number;
+  applyEffect: () => void;
 };
 
-const elementWeaknessMap: Record<ElementType, ElementType> = {
-  火: "水",
-  水: "木",
-  木: "火",
-  無: "無",
+export type GameEvent = {
+  name: string;
+  description: string;
+  weighted:number;
+  effects?: EventEffect | EventEffect[];
+};
+
+
+export type AttackAction = {
+  playerId: number;
+  battleFieldIndex: 0 | 1 | 2;
+  cardType: AttackCardType;
+  element?: ElementType; // 僅魔法棒需要
+  power?: number; // 僅魔法棒需要（例如基礎攻擊力）
 };
 
 export function useGameLogic(){
+  const isInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isInitialized.current) {
+      isInitialized.current = true;
+      for (let i = 0; i < 6; i++) {
+        generateMonster();
+      }
+      fillBattlefieldFromQueue();
+    }
+  }, []);
   /*========================================*/
   //回合
   const [turn, setTurn] = useState(1);
-const [phase, setPhase] = useState<GamePhase>("事件");
-const previousPhaseRef = useRef<GamePhase>("結算");
+  const [phase, setPhase] = useState<GamePhase>("事件");
+  const previousPhaseRef = useRef<GamePhase|"">("");
 
-// 階段推進副作用（不含 nextTurn）
-useEffect(() => {
-  if (phase === "事件") {
-    triggerRandomEvent();
-  } else if (phase === "行動") {
-    executeActionPhase();
-  }
-
-  // 檢查是否從「結算」切到「事件」，若是才加回合
-  if (previousPhaseRef.current === "結算" && phase === "事件") {
-    setTurn((t) => t + 1);
-  }
-
-  previousPhaseRef.current = phase;
-}, [phase]);
-
-const advancePhase = () => {
-  setPhase((prev) => {
-    switch (prev) {
-      case "事件":
-        return "準備";
-      case "準備":
-        return "行動";
-      case "行動":
-        return "結算";
-      case "結算":
-        return "事件";
+  // 階段推進副作用（不含 nextTurn）
+  useEffect(() => {
+    if (phase === "事件") {
+      triggerEvent();
+    } else if (phase === "結算") {
+      executeActionPhase();
     }
-  });
-};
 
+    // 檢查是否從「結算」切到「事件」，若是才加回合
+    if (previousPhaseRef.current === "結算" && phase === "事件") {
+      setTurn((t) => t + 1);
+    }
+
+    previousPhaseRef.current = phase;
+  }, [phase]);
+
+  const advancePhase = () => {
+    setPhase((prev) => {
+      switch (prev) {
+        case "事件":
+          return "準備";
+        case "準備":
+          return "行動";
+        case "行動":
+          return "結算";
+        case "結算":
+          return "事件";
+      }
+    });
+  };
+
+  const [logs, setLogs] = useState<BattleLog[]>([]);
+
+  useEffect(() => {
+    if (logs.length > 0) {
+      const lastLog = logs[logs.length - 1];
+      console.log(`第 ${lastLog.turn} 回合: ${lastLog.message}`);
+    }
+  }, [logs]);
+
+  const addLog = (message: string) => {
+    setLogs((prev) => [
+      { turn, message },
+      ...prev,
+    ]);
+  };
 
   /*========================================*/
   //怪獸
   const [battleFieldMonsters, setBattleFieldMonsters] = 
     useState<[BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]>([null, null, null]);
   const [queueMonsters, setQueueMonsters] = useState<Monster[]>([]);
+  const monsterNameTable: Record<ElementType, string[]> = {
+    火: ["火史萊姆"],
+    水: ["水史萊姆"],
+    木: ["草史萊姆"],
+    無: ["骷髏", "鬼魂"],
+  };
+  const Goblin:Monster[]=[
+    {
+      maxHP: 5,
+      HP: 5,
+      name: "炙熱哥布林",
+      type: "火",
+      loot: {
+        gold: 2,
+        manaStone: 0,
+        spellCards: null,
+      },
+    },
+    {
+      maxHP: 5,
+      HP: 5,
+      name: "冰冷哥布林",
+      type: "水",
+      loot: {
+        gold: 2,
+        manaStone: 0,
+        spellCards: null,
+      },
+    },
+    {
+      maxHP: 5,
+      HP: 5,
+      name: "狂野哥布林",
+      type: "木",
+      loot: {
+        gold: 2,
+        manaStone: 0,
+        spellCards: null,
+      },
+    },
+  ];
   // 隨機生成數字的輔助函式
   const getRandomInt = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -282,15 +266,29 @@ const advancePhase = () => {
     useEffect(() => {
       fillBattlefieldFromQueue();
     }, [queueMonsters]);
+    //攻擊相關
+    const elementCounterMap: Record<ElementType, ElementType> = {
+      火: "木",
+      木: "水",
+      水: "火",
+      無: "無",
+    };
+
+    const elementWeaknessMap: Record<ElementType, ElementType> = {
+      火: "水",
+      水: "木",
+      木: "火",
+      無: "無",
+    };
 
     const executeActionPhase = () => {
       const newBattlefield = [...battleFieldMonsters];
       const updatedPlayers = [...players];
 
       for (const action of attackQueue) {
-        const copyplayer = updatedPlayers.find(p => p.id === action.playerId);
+        const currentPlayer = updatedPlayers.find(p => p.id === action.playerId);
         //理論上不會出現這個狀況，單純防禦
-        if (!copyplayer) continue;
+        if (!currentPlayer) continue;
         // ===== 毒藥傷害處理（每次攻擊前） =====
         for (let i = 0; i < newBattlefield.length; i++) {
           const slot = newBattlefield[i];
@@ -307,6 +305,7 @@ const advancePhase = () => {
               if (slot.moster.loot.spellCards) {
                 dmgPlayer.loot.spellCards[slot.moster.loot.spellCards]++;
               }
+              console.log(`玩家${dmgPlayer.id} 毒殺了${slot.moster.name}`)
               newBattlefield[i] = null;
               setBattleFieldMonsters(newBattlefield as [BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]);
               break; // 怪物已死亡，跳出毒傷結算
@@ -319,7 +318,7 @@ const advancePhase = () => {
         if(!slot) return;
 
         // 如果該戰場是行動玩家先前冰的，則冰凍先解除
-        if (slot.lastIcedBy && slot.lastIcedBy === copyplayer.id) {
+        if (slot.lastIcedBy && slot.lastIcedBy === currentPlayer.id) {
           slot.lastIcedBy = null;
         }
         //如果戰場被冰了，則跳過攻擊
@@ -338,29 +337,36 @@ const advancePhase = () => {
           else if(elementWeaknessMap[element]==slot.moster.type){
             dmg*=0;
           }
+          console.log(`玩家${currentPlayer.id} 對${slot.moster.name}造成${dmg}點傷害`)
           slot.moster.HP -= dmg;
         }
         else if (action.cardType === "冰凍法術") {
-          slot.lastIcedBy = copyplayer.id;
+          slot.lastIcedBy = currentPlayer.id;
+          slot.moster.HP-=2;
+          console.log(`玩家${currentPlayer.id} 對${slot.moster.name}造成2點傷害`)
         }
         else if (action.cardType === "爆裂法術") {
           for (const m of newBattlefield) {
             if (m) m.moster.HP -= 2;
           }
+          console.log(`玩家${currentPlayer.id} 對所有戰場造成2點傷害`)
         }
         else if (action.cardType === "毒藥法術") {
           if (!slot.poisonedBy) slot.poisonedBy = [];
-          slot.poisonedBy.push(copyplayer.id);
+          slot.poisonedBy.push(currentPlayer.id);
+          console.log(`玩家${currentPlayer.id} 對${slot.moster.name}投下毒藥`)
         }
 
         // ===== 怪物死亡檢查 =====
         if (slot && slot.moster.HP <= 0) {
-          copyplayer.loot.gold += slot.moster.loot.gold;
-          copyplayer.loot.manaStone += slot.moster.loot.manaStone;
+          currentPlayer.loot.gold += slot.moster.loot.gold;
+          currentPlayer.loot.manaStone += slot.moster.loot.manaStone;
           if (slot.moster.loot.spellCards) {
-            copyplayer.loot.spellCards[slot.moster.loot.spellCards]++;
+            currentPlayer.loot.spellCards[slot.moster.loot.spellCards]++;
           }
+          console.log(`玩家${currentPlayer.id} 擊殺了${slot.moster.name}`)
           newBattlefield[action.battleFieldIndex] = null;
+          
           setBattleFieldMonsters(newBattlefield as [BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]);
           setPlayers(updatedPlayers);
         }
@@ -370,15 +376,15 @@ const advancePhase = () => {
   const [attackQueue, setAttackQueue] = useState<AttackAction[]>([]);
 
   const submitAttack = (action: AttackAction) => {
-  setAttackQueue((prevQueue) => {
-    const playerIndex = players.findIndex(p => p.id === action.playerId);
-    if (playerIndex === -1) return prevQueue; // 玩家不存在則不變動
+    setAttackQueue((prevQueue) => {
+      const playerIndex = players.findIndex(p => p.id === action.playerId);
+      if (playerIndex === -1) return prevQueue; // 玩家不存在則不變動
 
-    const newQueue = [...prevQueue];
-    newQueue.splice(playerIndex, 0, action); // 插入至對應 index 位置
-    return newQueue;
-  });
-};
+      const newQueue = [...prevQueue];
+      newQueue.splice(playerIndex, 0, action); // 插入至對應 index 位置
+      return newQueue;
+    });
+  };
   
   const elementCycle = (type:ElementType):ElementType => {
     switch (type){
@@ -439,39 +445,196 @@ const advancePhase = () => {
       return [...prev.slice(1), prev[0]];
     });
   };
+  //調整屬性
   /*========================================*/
   //事件區
   const [event,setEvent]=useState<GameEvent>();
+  // 主事件表
+  const eventTable: GameEvent[] = [
+    {
+      name: "無事件",
+      description: "本回合風平浪靜，什麼也沒發生。",
+      weighted:3,
+      effects: {
+        description: "本回合風平浪靜，什麼也沒發生。",
+        applyEffect: () => {
+          console.log("本回合風平浪靜，什麼也沒發生。");
+          // 可設計 setPlayers(p => ...) 加值處理
+        },
+      },
+    },
+    {
+      name: "旅行商人",
+      description: "出現旅行商人，玩家可以花費金幣購買武器。",
+      weighted:1,
+      effects: {
+        description: "出現旅行商人，玩家可以花費金幣購買武器。",
+        applyEffect: () => {
+          console.log("出現旅行商人，玩家可以花費金幣購買武器。");
+          // 可設計 setPlayers(p => ...) 加值處理
+        },
+      },
+    },
+    {
+      name: "精靈的祝福",
+      description: "精靈降臨，所有玩家獲得 +1 魔能石。",
+      weighted:1,
+      effects: {
+        description: "所有玩家 +1 魔能石",
+        applyEffect: () => {
+          console.log("🌟 所有玩家魔能石 +1");
+          setPlayers((prev) =>
+            prev.map((p) => ({
+              ...p,
+              loot: {
+                ...p.loot,
+                manaStone: p.loot.manaStone + 1,
+              },
+            }))
+          );
+        },
+      },
+    },
+    {
+      name: "元素紊亂",
+      description: "元素能量混亂，以下隨機一種效果生效：",
+      weighted:3,
+      effects: [
+        {
+          description: "元素剋制關係失效",
+          weighted:1,
+          applyEffect: () => {
+            console.log("⚡ 剋制關係失效，本回合不計屬性差異");
+          },
+        },
+        {
+          description: "所有攻擊視為無屬性",
+          weighted:1,
+          applyEffect: () => {
+            console.log("⚡ 所有攻擊為無屬性攻擊");
+          },
+        },
+        {
+          description: "火屬性傷害無效",
+          weighted:1,
+          applyEffect: () => {
+            console.log("⚡ 火屬性傷害無效");
+          },
+        },
+        {
+          description: "水屬性傷害無效",
+          weighted:1,
+          applyEffect: () => {
+            console.log("⚡ 水屬性傷害無效");
+          },
+        },
+        {
+          description: "木屬性傷害無效",
+          weighted:1,
+          applyEffect: () => {
+            console.log("⚡ 木屬性傷害無效");
+          },
+        },
+      ],
+    },
+    {
+      name: "哥布林襲擊",
+      description: "3隻哥布林衝入列隊，血量3，擊殺可得 2 金幣。",
+      weighted:1,
+      effects: {
+        description: "生成 3 隻哥布林進入列隊",
+        applyEffect: () => {
+          console.log("🗡️ 生成哥布林 x3");
+          setQueueMonsters((prev) => [...Goblin,...prev]);
+        },
+      },
+    },
+    {
+      name: "掏金熱",
+      description: "本回合擊殺怪物獲得雙倍金幣。",
+      weighted:1,
+      effects: {
+        description: "擊殺怪物金幣 x2",
+        applyEffect: () => {
+          console.log("💰 本回合擊殺金幣加倍！");
+          // 可設 flag，結算階段時金幣 *2
+        },
+      },
+    },
+  ];
+  const nextForcedEvent = useRef<{
+    eventName?: string;
+    effectDescription?: string;
+  } | null>(null);
+  const setNextEvent = (eventName?: string, effectDescription?: string) => {
+    nextForcedEvent.current = { eventName, effectDescription };
+  };
   //隨機事件
-  const triggerRandomEvent = () => {
-  const randomIndex = Math.floor(Math.random() * eventTable.length);
-  const selected = eventTable[randomIndex];
+  const triggerEvent = () => {
+    let selectedEvent: GameEvent | undefined;
+    let forcedEventName = nextForcedEvent.current?.eventName;
+    let forcedEffectDescription = nextForcedEvent.current?.effectDescription;
+    nextForcedEvent.current = null; // 用過就清空
 
-  let appliedEffect: EventEffect | undefined;
+    if (turn === 1) {
+      selectedEvent = eventTable.find(e => e.name === "無事件");
+    }
+    // --- 1. 選擇事件（優先 forced） ---
+    if (forcedEventName) {
+      selectedEvent = eventTable.find(e => e.name === forcedEventName);
+    }
 
-  // 根據 effect 的型別來決定怎麼處理
-  if (Array.isArray(selected.effects)) {
-    const randomEffectIndex = Math.floor(Math.random() * selected.effects.length);
-    appliedEffect = selected.effects[randomEffectIndex];
-  } else if (selected.effects) {
-    appliedEffect = selected.effects;
-  }
+    if (!selectedEvent) {
+      const totalWeight = eventTable.reduce((sum, e) => sum + (e.weighted ?? 1), 0);
+      let roll = Math.random() * totalWeight;
+      for (const e of eventTable) {
+        roll -= (e.weighted ?? 1);
+        if (roll <= 0) {
+          selectedEvent = e;
+          break;
+        }
+      }
+    }
 
-  if (appliedEffect) {
-    appliedEffect.applyEffect?.();
+    if (!selectedEvent) return;
 
-    const appliedEvent: GameEvent = {
-      ...selected,
-      description: appliedEffect.description, // 使用實際效果的描述
-      effects: appliedEffect, // 也可保留選中的 effect 作為記錄
-    };
+    // --- 2. 選擇效果 ---
+    let appliedEffect: EventEffect | undefined;
 
-    setEvent(appliedEvent);
-  } else {
-    // 沒有 effects 的情況
-    setEvent(selected);
-  }
-};
+    if (Array.isArray(selectedEvent.effects)) {
+      const effects = selectedEvent.effects;
+
+      if (forcedEffectDescription) {
+        appliedEffect = effects.find(e => e.description === forcedEffectDescription);
+      }
+
+      if (!appliedEffect) {
+        const totalWeight = effects.reduce((sum, e) => sum + (e.weighted ?? 1), 0);
+        let roll = Math.random() * totalWeight;
+        for (const e of effects) {
+          roll -= (e.weighted ?? 1);
+          if (roll <= 0) {
+            appliedEffect = e;
+            break;
+          }
+        }
+      }
+    } else if (selectedEvent.effects) {
+      appliedEffect = selectedEvent.effects;
+    }
+
+    // --- 3. 套用效果 ---
+    if (appliedEffect) {
+      appliedEffect.applyEffect?.();
+      setEvent({
+        ...selectedEvent,
+        description: appliedEffect.description,
+        effects: appliedEffect,
+      });
+    } else {
+      setEvent(selectedEvent);
+    }
+  };
   // 回傳 Hook 提供的狀態和函式
   return {
     turn,
@@ -487,7 +650,10 @@ const advancePhase = () => {
     movePlayerIndexToFront,
     rotatePlayers,
     event,
-    triggerRandomEvent
+    nextForcedEvent: nextForcedEvent.current,
+    setNextEvent,
+    triggerEvent,
+    eventTable 
   };
 }
 
