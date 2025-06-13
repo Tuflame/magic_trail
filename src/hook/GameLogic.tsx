@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState ,useEffect } from "react";
 
 export type ElementType = "火" | "水" | "木" | "無";
 
@@ -124,9 +124,11 @@ export type Monster = {
 
 export type BattleFieldMonster={
   moster:Monster;
-  poisonrd:boolean;
-  iced:boolean;
+  poisonedBy: number[]|null;
+  lastIcedBy:number|null;
 }
+
+export type BattleFieldSlot = BattleFieldMonster | null;
 
 const monsterNameTable: Record<ElementType, string[]> = {
   火: ["火史萊姆", "炙熱哥布林","火精靈"],
@@ -135,11 +137,18 @@ const monsterNameTable: Record<ElementType, string[]> = {
   無: ["骷髏", "鬼魂"],
 };
 
-const weaknessMap: Record<ElementType, ElementType> = {
-    火: "木",
-    木: "水",
-    水: "火",
-    無: "無",
+const elementCounterMap: Record<ElementType, ElementType> = {
+  火: "木",
+  木: "水",
+  水: "火",
+  無: "無",
+};
+
+const elementWeaknessMap: Record<ElementType, ElementType> = {
+  火: "水",
+  水: "木",
+  木: "火",
+  無: "無",
 };
 
 export function useGameLogic(){
@@ -156,10 +165,12 @@ export function useGameLogic(){
     setPhase((prev) => {
       switch (prev) {
         case "事件":
+          triggerRandomEvent();
           return "準備";
         case "準備":
           return "行動";
         case "行動":
+          executeActionPhase();
           return "結算";
         case "結算":
           nextTurn(); // 回合加1
@@ -169,7 +180,9 @@ export function useGameLogic(){
   };
   /*========================================*/
   //怪獸
-  const [monsters, setMonsters] = useState<Monster[]>([]);
+  const [battleFieldMonsters, setBattleFieldMonsters] = 
+    useState<[BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]>([null, null, null]);
+  const [queueMonsters, setQueueMonsters] = useState<Monster[]>([]);
   // 隨機生成數字的輔助函式
   const getRandomInt = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -193,7 +206,7 @@ export function useGameLogic(){
     return cards[index];
   };
   // 生成單個怪獸
-  const generateMonster = (): Monster => {
+  const generateMonster = () => {
     const _maxHP = getRandomInt(5, 10);
     const _type = getRandomElementType(); 
     const _name = getRandomMonsterName(_type);
@@ -230,48 +243,131 @@ export function useGameLogic(){
       },
     };
 
-    // 更新整體 monsters 陣列
-    const updatedMonsters = [...monsters, newMonster];
-    setMonsters(updatedMonsters);
-
-    // 切分成 battlefield / queue
-    const battlefield = updatedMonsters.slice(0, 3);
-    const queue = updatedMonsters.slice(3);
-    setBattleFieldMonster(battlefield);
-    setQueueMonster(queue);
-
-    return newMonster;
+    setQueueMonsters((prevQueue) => {
+      return [...prevQueue, newMonster];
+    });
   };
 
-  const [battleFieldMonster,setBattleFieldMonster]=useState<BattleFieldMonster[]>([]);
-  const [queueMonster,setQueueMonster]=useState<Monster[]>([]);
+    const fillBattlefieldFromQueue = () => {
 
-  const killMonsterAt = (index: number) => {
-    const battlefield = [...battleFieldMonster];
-    const queue = [...queueMonster];
+      const updatedBattlefield = [...battleFieldMonsters];
+      const updatedQueue = [...queueMonsters];
 
-    if (queue.length > 0) {
-      const newMonster = queue.shift()!;
-      battlefield[index] = newMonster;
-      setQueueMonster(queue);
-    } else {
-      // 沒怪可補，該位置清空
-      battlefield[index] = undefined as unknown as Monster;
-    }
+      const emptyIndex = battleFieldMonsters.findIndex(m => m === null);
+      if (emptyIndex !== -1 && updatedQueue.length > 0) {
+        const wrappedMonster: BattleFieldMonster = {
+          moster: updatedQueue[0],
+          poisonedBy: null,
+          lastIcedBy: null,
+        };
+        updatedBattlefield[emptyIndex] = wrappedMonster;
+        setBattleFieldMonsters(updatedBattlefield as typeof battleFieldMonsters);
+        updatedQueue.shift();
+        setQueueMonsters(updatedQueue);
+      }
+    };
 
-    setBattleFieldMonster(battlefield);
-    setMonsters([...battlefield.filter(Boolean), ...queue]);
-  };
+    useEffect(() => {
+      fillBattlefieldFromQueue();
+    }, [queueMonsters]);
 
+    const executeActionPhase = () => {
+      const newBattlefield = [...battleFieldMonsters];
+      const updatedPlayers = [...players];
 
+      for (const action of attackQueue) {
+        const copyplayer = updatedPlayers.find(p => p.id === action.playerId);
+        //理論上不會出現這個狀況，單純防禦
+        if (!copyplayer) continue;
+        // ===== 毒藥傷害處理（每次攻擊前） =====
+        for (let i = 0; i < newBattlefield.length; i++) {
+          const slot = newBattlefield[i];
+          //如果沒有被毒或是已經被冰凍則跳過
+          if (!slot || !slot.poisonedBy||slot.lastIcedBy) continue;
+          for (const poisonerId of slot.poisonedBy) {
+            const dmgPlayer = updatedPlayers.find(p => p.id === poisonerId);
+            if (!dmgPlayer) continue;
+            slot.moster.HP -= 1;
+            if (slot.moster.HP <= 0) {
+              // 發獎勵給最後毒死怪物者
+              dmgPlayer.loot.gold += slot.moster.loot.gold;
+              dmgPlayer.loot.manaStone += slot.moster.loot.manaStone;
+              if (slot.moster.loot.spellCards) {
+                dmgPlayer.loot.spellCards[slot.moster.loot.spellCards]++;
+              }
+              newBattlefield[i] = null;
+              setBattleFieldMonsters(newBattlefield as [BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]);
+              break; // 怪物已死亡，跳出毒傷結算
+            }
+          }
+        }
+
+        // ===== 正常攻擊處理 =====
+        const slot = newBattlefield[action.battleFieldIndex];
+        if(!slot) return;
+
+        // 如果該戰場是行動玩家先前冰的，則冰凍先解除
+        if (slot.lastIcedBy && slot.lastIcedBy === copyplayer.id) {
+          slot.lastIcedBy = null;
+        }
+        //如果戰場被冰了，則跳過攻擊
+        if(slot.lastIcedBy) continue;      
+
+        // 攻擊處理
+        if (action.cardType === "魔法棒") {
+          const power = action.power;
+          const element = action.element;
+          if (!element||!power) continue;
+
+          let dmg = power;
+          if(elementCounterMap[element]==slot.moster.type){
+            dmg*=2;
+          }
+          else if(elementWeaknessMap[element]==slot.moster.type){
+            dmg*=0;
+          }
+          slot.moster.HP -= dmg;
+        }
+        else if (action.cardType === "冰凍法術") {
+          slot.lastIcedBy = copyplayer.id;
+        }
+        else if (action.cardType === "爆裂法術") {
+          for (const m of newBattlefield) {
+            if (m) m.moster.HP -= 2;
+          }
+        }
+        else if (action.cardType === "毒藥法術") {
+          if (!slot.poisonedBy) slot.poisonedBy = [];
+          slot.poisonedBy.push(copyplayer.id);
+        }
+
+        // ===== 怪物死亡檢查 =====
+        if (slot && slot.moster.HP <= 0) {
+          copyplayer.loot.gold += slot.moster.loot.gold;
+          copyplayer.loot.manaStone += slot.moster.loot.manaStone;
+          if (slot.moster.loot.spellCards) {
+            copyplayer.loot.spellCards[slot.moster.loot.spellCards]++;
+          }
+          newBattlefield[action.battleFieldIndex] = null;
+          setBattleFieldMonsters(newBattlefield as [BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]);
+          setPlayers(updatedPlayers);
+        }
+      }
+      setAttackQueue([]);
+    };
   const [attackQueue, setAttackQueue] = useState<AttackAction[]>([]);
 
   const submitAttack = (action: AttackAction) => {
-    setAttackQueue((prev) => [...prev, action]);
-  };
+  setAttackQueue((prevQueue) => {
+    const playerIndex = players.findIndex(p => p.id === action.playerId);
+    if (playerIndex === -1) return prevQueue; // 玩家不存在則不變動
 
-  const 
-
+    const newQueue = [...prevQueue];
+    newQueue.splice(playerIndex, 0, action); // 插入至對應 index 位置
+    return newQueue;
+  });
+};
+  
   const elementCycle = (type:ElementType):ElementType => {
     switch (type){
       case "火":
@@ -370,11 +466,13 @@ export function useGameLogic(){
     nextTurn,
     players,
     generatePlayer,
-    monsters,
-    battleFieldMonster,
-    queueMonster,
+    battleFieldMonster: battleFieldMonsters,
+    queueMonster: queueMonsters,
     generateMonster,
-    killMonsterAt,
+    submitAttack,
+    advancePhase,
+    phase,
+    executeActionPhase,
     movePlayerIndexToFront,
     rotatePlayers,
     event,

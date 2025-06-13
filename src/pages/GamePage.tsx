@@ -1,12 +1,10 @@
-import { useState ,useEffect} from "react";
+import { useState} from "react";
+import { useNavigate } from "react-router-dom";
 import "./GamePage.css";
-
-import { useGameLogic } from "../hook/GameLogic";
 import { Order } from "../component/Order";
 import { Battlefield } from "../component/Battlefield";
 import { MonsterQueue } from "../component/MonsterQueue";
 import { EventCard } from "../component/EventCard"
-import type { Player, Monster } from "../hook/GameLogic";
 
 import type {GameLogicType} from "../hook/GameLogic"
 
@@ -17,13 +15,14 @@ export default function GamePage({ game }: { game: GameLogicType }) {
     battleFieldMonster,
     queueMonster,
     generateMonster,
-    killMonsterAt,
     movePlayerIndexToFront,
     rotatePlayers,
     triggerRandomEvent,
     event,
   } = game;
   const [id,setID]=useState(1);
+
+  const navigate = useNavigate();
 
   const plus=()=>{
     setID((prev)=>(prev+1));
@@ -37,10 +36,8 @@ export default function GamePage({ game }: { game: GameLogicType }) {
         <button onClick={() => movePlayerIndexToFront(3)}>將第3往前調動</button>
         <button onClick={rotatePlayers}>調動</button>
         <button onClick={generateMonster}>生成怪物</button>
-        <button onClick={() => killMonsterAt(0)}>🗡️ 擊殺第1隻怪物</button>
-        <button onClick={() => killMonsterAt(1)}>🗡️ 擊殺第2隻怪物</button>
-        <button onClick={() => killMonsterAt(2)}>🗡️ 擊殺第3隻怪物</button>
         <button onClick={triggerRandomEvent}>隨機事件</button>
+        <button onClick={() => navigate("/control")}>前往控制頁</button>
       </div>
       <div className="middle-section">
         <div className="battlefield-wrapper">
