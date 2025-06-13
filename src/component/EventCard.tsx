@@ -14,7 +14,9 @@ export function EventCard({event}: GameEventProps) {
         <div className="section-header">
           <h2 className="section-title">本局事件</h2>
         </div>
-          <h3 className="Event-name">{event ? event.name : "未知事件"}</h3>
+        <h3 className="Event-name">
+          {event ? `${event.name} :` : "未知事件"}
+        </h3>
       </header>
 
 

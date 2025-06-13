@@ -3,9 +3,8 @@
 /* MonsterCard.css */
 
 .monster-card {
-  min-width: 150px; 
-  max-width: 300px; 
-  /* max-height: 557px; 可依比例算出來 */
+  min-width: 70px; 
+  max-width: 275px; 
   aspect-ratio: 250/405;
   display: flex;
   flex: 1;

@@ -1,5 +1,5 @@
 .battlefield-rowContainer {
-  height: 500px;
+
   display: flex;          /* 啟用 Flexbox */
   flex-direction: row;    /* 水平排列（預設就是 row） */
   flex-wrap: nowrap;       /* 不換行：單行 */
