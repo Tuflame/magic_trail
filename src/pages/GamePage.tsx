@@ -11,7 +11,7 @@ import type {GameLogicType} from "../hook/GameLogic"
 export default function GamePage({ game }: { game: GameLogicType }) {
   const {
     players,
-    generatePlayer,
+    generatePlayers,
     battleFieldMonster,
     queueMonster,
     generateMonster,
@@ -20,19 +20,13 @@ export default function GamePage({ game }: { game: GameLogicType }) {
     triggerEvent,
     event,
   } = game;
-  const [id,setID]=useState(1);
-
   const navigate = useNavigate();
-
-  const plus=()=>{
-    setID((prev)=>(prev+1));
-  }
    return (
     <div className="main-container">
       <div className="left-section">
         <Order players={players} />
         <h2>控制區</h2>
-        <button onClick={() => {generatePlayer(id, `魔法師${id}`),plus()}}>生成玩家</button>
+        <button onClick={() => {generatePlayers(6)}}>生成玩家</button>
         <button onClick={() => movePlayerIndexToFront(3)}>將第3往前調動</button>
         <button onClick={rotatePlayers}>調動</button>
         <button onClick={generateMonster}>生成怪物</button>

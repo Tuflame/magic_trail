@@ -1,261 +1,371 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import type { EventEffect, GameLogicType } from "../hook/GameLogic";
+import type { GameLogicType, ElementType, AttackCardType, EventEffect } from "../hook/GameLogic";
 
 export default function ControlPage({ game }: { game: GameLogicType }) {
-  const [playerId, setPlayerId] = useState(1);
-  const [playerName, setPlayerName] = useState("");
-  const [formInputs, setFormInputs] = useState<Record<number, { battleFieldIndex: number; cardType: string; element?: string }>>({});
-  const [stagedActions, setStagedActions] = useState<any[]>([]);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [selectedEventName, setSelectedEventName] = useState<string>("");
-  const [selectedEffectDesc, setSelectedEffectDesc] = useState<string>("");
-
+  const {
+    turn,
+    players,
+    generatePlayers,
+    changePlayerName,
+    movePlayerIndexToFront,
+    battleFieldMonster,
+    queueMonster,
+    submitAttack,
+    advancePhase,
+    phase,
+    event,
+    eventTable,
+    setNextEvent,
+    changePlayerField,
+  } = game;
   const navigate = useNavigate();
 
-  const handleAddPlayer = () => {
-    if (!playerName) return;
-    game.generatePlayer(playerId, playerName);
-    const newPlayer = game.players.find(p => p.id === playerId);
-    const defaultElement = "火";
-    setFormInputs((prev) => ({
-      ...prev,
-      [playerId]: { battleFieldIndex: 1, cardType: "魔法棒", element: defaultElement },
-    }));
-    setPlayerId((id) => id + 1);
-    setPlayerName("");
-  };
+  const [playerCount, setPlayerCount] = useState(6);
+  const [nextEventName, setNextEventName] = useState<string>("");
+  const [nextEffectDesc, setNextEffectDesc] = useState<string>("");
 
+    const [attackInputs, setAttackInputs] = useState<any[]>([]);
+    const [previewActions, setPreviewActions] = useState<any[] | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   useEffect(() => {
-    game.players.forEach((player) => {
-      if (!formInputs[player.id]) {
-        setFormInputs((prev) => ({
-          ...prev,
-          [player.id]: { battleFieldIndex: 1, cardType: "魔法棒", element: "火" },
-        }));
-      }
-    });
-  }, [game.players]);
-
-  const handleInputChange = (playerId: number, field: string, value: string | number) => {
-    if (field === "battleFieldIndex") {
-      const num = Number(value);
-      if (num < 1 || num > 3) return;
-    }
-    setFormInputs((prev) => ({
-      ...prev,
-      [playerId]: {
-        ...prev[playerId],
-        [field]: value,
-      },
-    }));
-  };
-
-  const stageAllActions = () => {
-    const staged = game.players.map((player) => {
-      const input = formInputs[player.id];
-      if (!input) return null;
-
-      const battleFieldIndex = Number(input.battleFieldIndex);
-      if (battleFieldIndex < 1 || battleFieldIndex > 3) return null;
-
-      return {
+    setAttackInputs(
+        players.map((player) => ({
         playerId: player.id,
-        playerName: player.name,
-        battleFieldIndex,
-        cardType: input.cardType,
-        element: input.cardType === "魔法棒" ? input.element : undefined,
-        power: input.cardType === "魔法棒" && input.element ? player.attack[input.element as keyof typeof player.attack] : undefined,
-      };
-    }).filter(Boolean);
-    setStagedActions(staged);
-  };
+        cardType: "魔法棒",
+        element: "火",
+        power: 1,
+        target: 0,
+        }))
+    );
+    setPreviewActions(null); // 玩家重生或切換頁面時同步清除預覽
+    }, [players]);
 
-  const handleSubmitAllActions = () => {
-    stagedActions.forEach((action) => {
-      game.submitAttack({
-        playerId: action.playerId,
-        battleFieldIndex: (action.battleFieldIndex - 1) as 0 | 1 | 2,
-        cardType: action.cardType,
-        element: action.element,
-        power: action.power,
-      });
+  // 處理攻擊 input 變更
+  const handleAttackChange = (
+    index: number,
+    field: keyof typeof attackInputs[0],
+    value: string | number | ElementType | AttackCardType
+  ) => {
+    setAttackInputs((prev) => {
+      const newInputs = [...prev];
+      const updated = { ...newInputs[index], [field]: value };
+      if (field === "element" && value !== "無") {
+        const player = players.find((p) => p.id === updated.playerId);
+        if (player && (value === "火" || value === "水" || value === "木")) {
+          updated.power = player.attack[value];
+        }
+      }
+      newInputs[index] = updated;
+      return newInputs;
     });
-    setStagedActions([]);
-    setHasSubmitted(true);
   };
-
-  const handleTriggerEvent = () => {
-    game.triggerEvent?.();
-  };
-
-  const handleSetNextEvent = () => {
-    game.setNextEvent?.(selectedEventName || undefined, selectedEffectDesc || undefined);
-  };
-
-  useEffect(() => {
-    setHasSubmitted(false);
-  }, [game.phase]);
 
   return (
     <div>
       <button onClick={() => navigate("/")}>前往遊戲頁</button>
-      <h2>當前回合：第 {game.turn} 回合</h2>
-      <h3>當前事件：{game.event ? `${game.event.name} - ${game.event.description}` : "無事件"}</h3>
-      <p>當前階段：{game.phase}</p>
+      <h1>控制台 - 回合 {turn}（{phase}）</h1>
+      <h2>{event?.name}</h2>
+      <div>
+        <h2>指定下一回合事件</h2>
+        <select value={nextEventName} onChange={(e) => {
+          setNextEventName(e.target.value);
+          const ev = eventTable.find(ev => ev.name === e.target.value);
+          if (Array.isArray(ev?.effects)) {
+            const firstEffect = ev.effects[0] as EventEffect;
+            setNextEffectDesc(firstEffect?.description || "");
+          } else if (typeof ev?.effects === 'object') {
+            setNextEffectDesc(ev.effects?.description || "");
+          }
+        }}>
+          <option value="">-- 不指定事件 --</option> 
+          {eventTable.map((e) => (
+            <option key={e.name} value={e.name}>{e.name}</option>
+          ))}
+        </select>
 
-      {(game.turn === 1 && game.phase === "事件") && (
+        {(() => {
+          const selected = eventTable.find(e => e.name === nextEventName);
+          if (Array.isArray(selected?.effects)) {
+            return (
+              <select
+                value={nextEffectDesc}
+                onChange={(e) => setNextEffectDesc(e.target.value)}
+              >
+                {selected.effects.map((eff) => (
+                  <option key={eff.description} value={eff.description}>{eff.description}</option>
+                ))}
+              </select>
+            );
+          }
+          return null;
+        })()}
+
+        <button
+          onClick={() => setNextEvent(nextEventName || undefined, nextEffectDesc || undefined)}
+        >
+          設定下一事件
+        </button>
+      </div>
+      <div>
+        <button
+            onClick={advancePhase}
+            // 行動階段未送出時，不可按
+            disabled={phase === "行動" && (!hasSubmitted || !previewActions)}
+            style={phase === "行動" && (!hasSubmitted || !previewActions) ? { opacity: 0.4, pointerEvents: "none" } : {}}
+        >
+            前往下一階段
+        </button>
+        {(!hasSubmitted || !previewActions)&&
+            <div>請先提交行動</div>
+        }
+      </div>
+
+      {players.length === 0 && (
         <div>
-          <h2>新增玩家</h2>
-          <input type="number" value={playerId} onChange={(e) => setPlayerId(Number(e.target.value))} placeholder="玩家ID" />
-          <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="玩家名稱" />
-          <button onClick={handleAddPlayer}>加入</button>
+            <h2>輸入玩家數並生成</h2>
+            <input
+            type="number"
+            value={playerCount}
+            min={1}
+            onChange={(e) => {
+                // 防呆：不可為 0、負數或 NaN
+                const v = Math.max(1, Number(e.target.value) || 1);
+                setPlayerCount(v);
+            }}
+            style={{ width: 60 }}
+            />
+            <button
+            onClick={() => {
+                // 重設所有攻擊與預覽狀態
+                game.generatePlayers(playerCount);
+                setAttackInputs(
+                Array.from({ length: playerCount }, (_, i) => ({
+                    playerId: i + 1,
+                    cardType: "魔法棒" as AttackCardType,
+                    element: "火" as ElementType,
+                    power: 1,
+                    target: 0 as 0 | 1 | 2,
+                }))
+                );
+                setPreviewActions(null);
+            }}
+            style={{ marginLeft: 12 }}
+            >
+            生成玩家
+            </button>
         </div>
-      )}
+        )}
 
       <div>
         <h2>玩家列表</h2>
-        <ul>
-          {game.players.map((player, index) => (
-            <li key={player.id}>
-              #{index + 1} - {player.name} (ID: {player.id})｜金幣: {player.loot.gold}｜魔能石: {player.loot.manaStone}
-              <div>屬性傷害：火: {player.attack.火}｜水: {player.attack.水}｜木: {player.attack.木}</div>
-              <div>
-                法術卡：
-                {Object.entries(player.loot.spellCards)
-                  .filter(([_, count]) => count > 0)
-                  .map(([type, count]) => `${type} x${count}`)
-                  .join("，")}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {game.phase === "行動" && (
-        <div>
-          <h2>輸入玩家行動</h2>
-          {game.players.map((player) => (
-            <div key={player.id}>
-              玩家 {player.name}（ID: {player.id}）
-              <input type="number" min={1} max={3} value={formInputs[player.id]?.battleFieldIndex ?? 1} onChange={(e) => handleInputChange(player.id, "battleFieldIndex", Number(e.target.value))} />
-              <select value={formInputs[player.id]?.cardType} onChange={(e) => handleInputChange(player.id, "cardType", e.target.value)}>
-                <option value="魔法棒">魔法棒</option>
-                {Object.entries(player.loot.spellCards).map(([card, count]) =>
-                  card !== "魔法棒" && count > 0 ? (
-                    <option key={card} value={card}>
-                      {card}（剩餘 {count} 張）
-                    </option>
-                  ) : null
-                )}
-              </select>
-              {formInputs[player.id]?.cardType === "魔法棒" && (
-                <>
-                  <select value={formInputs[player.id]?.element} onChange={(e) => handleInputChange(player.id, "element", e.target.value)}>
-                    <option value="火">火</option>
-                    <option value="水">水</option>
-                    <option value="木">木</option>
-                  </select>
-                  <span>傷害值：{formInputs[player.id]?.element ? player.attack[formInputs[player.id].element as keyof typeof player.attack] : "-"}</span>
-                </>
-              )}
+        {players.map((p) => (
+          <div key={p.id} style={{ border: '1px solid #888', margin: 8, padding: 8 }}>
+            <div>
+              <strong>ID: {p.id}</strong>
             </div>
-          ))}
-          <button onClick={stageAllActions}>確認行動（預覽）</button>
-          <ul>
-            {stagedActions.map((action) => (
-              <li key={action.playerId}>
-                玩家 {action.playerName} 攻擊 {action.battleFieldIndex} 號，用 {action.cardType}
-                {action.cardType === "魔法棒" && `（${action.element}） 傷害 ${action.power}`}
-              </li>
-            ))}
-          </ul>
-          <button onClick={handleSubmitAllActions} disabled={hasSubmitted}>提交所有行動</button>
-          {hasSubmitted && <p style={{ color: "green", fontWeight: "bold" }}>✅ 已提交</p>}
+            <div>
+              名稱：
+              <input
+                value={p.name}
+                onChange={e => changePlayerField(p.id, ['name'], e.target.value)}
+              />
+            </div>
+            <div>
+              <span>攻擊：</span>
+              火：
+              <input
+                type="number"
+                value={p.attack.火}
+                min={0}
+                onChange={e => changePlayerField(p.id, ['attack', '火'], Number(e.target.value))}
+              />
+              水：
+              <input
+                type="number"
+                value={p.attack.水}
+                min={0}
+                onChange={e => changePlayerField(p.id, ['attack', '水'], Number(e.target.value))}
+              />
+              木：
+              <input
+                type="number"
+                value={p.attack.木}
+                min={0}
+                onChange={e => changePlayerField(p.id, ['attack', '木'], Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <span>金幣：</span>
+              <input
+                type="number"
+                value={p.loot.gold}
+                min={0}
+                onChange={e => changePlayerField(p.id, ['loot', 'gold'], Number(e.target.value))}
+              />
+              <span> 魔能石：</span>
+              <input
+                type="number"
+                value={p.loot.manaStone}
+                min={0}
+                onChange={e => changePlayerField(p.id, ['loot', 'manaStone'], Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <span>法術卡：</span>
+              {Object.entries(p.loot.spellCards).map(([card, count]) => (
+                <span key={card} style={{ marginRight: 8 }}>
+                  {card}：
+                  <input
+                    type="number"
+                    value={count}
+                    min={0}
+                    onChange={e =>
+                      changePlayerField(
+                        p.id,
+                        ['loot', 'spellCards', card],
+                        Number(e.target.value)
+                      )
+                    }
+                    style={{ width: 40 }}
+                  />
+                </span>
+              ))}
+            </div>
+            <button onClick={() => movePlayerIndexToFront(p.id)}>調到最前</button>
+          </div>
+        ))}
+      </div>
+
+    {(attackInputs[0]&&phase==="行動") && 
+      <div>
+        <h2>攻擊輸入</h2>
+        {players.map((p, i) => (
+          <div key={p.id}>
+            <span>{p.name}：</span>
+            <select
+              value={attackInputs[i]?.cardType}
+              onChange={(e) => handleAttackChange(i, "cardType", e.target.value as AttackCardType)}
+              disabled={!!previewActions}
+            >
+              <option value="魔法棒">魔法棒</option>
+              {Object.entries(p.loot.spellCards)
+                .filter(([cardType, count]) => cardType !== "魔法棒" && count > 0)
+                .map(([cardType]) => (
+                  <option key={cardType} value={cardType}>{cardType}</option>
+                ))}
+            </select>
+            {attackInputs[i]?.cardType === "魔法棒" && (
+              <>
+                <select
+                  value={attackInputs[i].element}
+                  onChange={(e) => handleAttackChange(i, "element", e.target.value as ElementType)}
+                  disabled={!!previewActions}
+                >
+                  <option value="火">火</option>
+                  <option value="水">水</option>
+                  <option value="木">木</option>
+                </select>
+                <span>威力: {attackInputs[i].power}</span>
+              </>
+            )}
+            <select
+              value={attackInputs[i].target}
+              onChange={(e) => handleAttackChange(i, "target", Number(e.target.value) as 0 | 1 | 2)}
+              disabled={!!previewActions}
+            >
+              <option value={0}>戰場 A</option>
+              <option value={1}>戰場 B</option>
+              <option value={2}>戰場 C</option>
+            </select>
+          </div>
+        ))}
+        {/* 預覽還沒啟動才出現「提交全部」 */}
+        {!previewActions && (
+          <button
+            style={{ marginTop: 12 }}
+            onClick={() => setPreviewActions([...attackInputs])}
+          >提交全部（預覽）</button>
+        )}
+      </div>
+      }
+
+      {/* 預覽區塊 */}
+        {previewActions && (
+        <div style={{ border: "1px solid #fc0", padding: 12, margin: 12 }}>
+            <h3>請再次確認玩家行動</h3>
+            <ol>
+            {players.map((p, i) => {
+                const act = previewActions[i];
+                return (
+                <li key={p.id}>
+                    {p.name}：{act.cardType}
+                    {act.cardType === "魔法棒"
+                    ? `（${act.element}、威力${act.power}，攻擊戰場${["A", "B", "C"][act.target]}）`
+                    : `（攻擊戰場${["A", "B", "C"][act.target]}）`
+                    }
+                </li>
+                );
+            })}
+            </ol>
+            <button
+            style={{ marginTop: 12, background: "#5f5", border: "1px solid #880" }}
+            onClick={() => {
+                if (hasSubmitted) return;
+                previewActions.forEach((act, idx) => {
+                submitAttack({
+                    playerId: players[idx].id, // 按目前陣列順序送出
+                    cardType: act.cardType,
+                    element: act.cardType === "魔法棒" ? act.element : undefined,
+                    power: act.cardType === "魔法棒" ? act.power : undefined,
+                    battleFieldIndex: act.target,
+                });
+                });
+                setHasSubmitted(true);
+            }}
+            disabled={hasSubmitted}
+            >
+            {hasSubmitted ? "已提交" : "確認送出"}
+            </button>
+            <button
+            style={{ marginLeft: 12 }}
+            onClick={() => {
+                setPreviewActions(null);
+                setHasSubmitted(false);
+            }}
+            >取消</button>
         </div>
-      )}
-
-      <div>
-        <h2>戰場區域</h2>
-        <ul>
-          {game.battleFieldMonster.map((slot, idx) => (
-            <li key={idx}>
-              {slot ? `${idx + 1}. ${slot.moster.name} (${slot.moster.HP}/${slot.moster.maxHP}) 屬性:${slot.moster.type}` : `${idx + 1}. 空`}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <h2>列隊區域</h2>
-        <ul>
-          {game.queueMonster.map((m, idx) => (
-            <li key={idx}>{m.name}（{m.HP}/{m.maxHP}）屬性:{m.type}</li>
-          ))}
-        </ul>
-        <button onClick={game.generateMonster}>生成怪物</button>
-      </div>
-
-      <div>
-        <h2>事件設定面板</h2>
-
-        {game.nextForcedEvent && (
-          <p style={{ color: "orange" }}>
-            ⚠️ 已設定下回合事件：{game.nextForcedEvent.eventName}
-            {game.nextForcedEvent.effectDescription && ` - ${game.nextForcedEvent.effectDescription}`}
-          </p>
         )}
 
-        <fieldset style={{ border: "1px solid gray", padding: "10px", borderRadius: "8px", marginBottom: "1em" }}>
-          <legend>預設下回合事件</legend>
-          <label>
-            事件類型：
-            <select value={selectedEventName} onChange={(e) => {
-              const name = e.target.value;
-              setSelectedEventName(name);
-              setSelectedEffectDesc(""); // 重置效果
-            }}>
-              <option value="">-- 隨機事件 --</option>
-              {game.eventTable.map((ev) => (
-                <option key={ev.name} value={ev.name}>{ev.name}</option>
-              ))}
-            </select>
-          </label>
-
-          {/* 強制顯示子效果選單（只要該事件 effects 為陣列） */}
-          {(() => {
-            const selectedEvent = game.eventTable.find(e => e.name === selectedEventName);
-            if (selectedEvent && Array.isArray(selectedEvent.effects)) {
-              return (
-                <label>
-                  效果選擇：
-                  <select value={selectedEffectDesc} onChange={(e) => setSelectedEffectDesc(e.target.value)}>
-                    <option value="">-- 隨機效果 --</option>
-                    {selectedEvent.effects.map((eff: EventEffect) => (
-                      <option key={eff.description} value={eff.description}>
-                        {eff.description}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              );
-            }
-            return null;
-          })()}
-
-          <div style={{ marginTop: "10px" }}>
-            <button onClick={handleSetNextEvent}>✅ 設定下一回合事件</button>
-          </div>
-        </fieldset>
-
-        <fieldset style={{ border: "1px dashed gray", padding: "10px", borderRadius: "8px" }}>
-          <legend>立即觸發（測試用）</legend>
-          <button onClick={handleTriggerEvent}>🎲 立即觸發事件</button>
-        </fieldset>
-      </div>
-
       <div>
-        <button onClick={game.advancePhase}>進入下一階段</button>
+        <h2>戰場怪物</h2>
+        <ul>
+          {battleFieldMonster.map((m, i) => (
+            <li key={i}>
+                {m ? (
+                    <>
+                    {`${m.moster.name}（HP: ${m.moster.HP}/${m.moster.maxHP}）`}
+                    <br />
+                    <span>
+                        戰利品：
+                        {m.moster.loot.gold > 0 && ` 金幣×${m.moster.loot.gold} `}
+                        {m.moster.loot.manaStone > 0 && ` 魔力石×${m.moster.loot.manaStone} `}
+                        {m.moster.loot.spellCards && ` 法術卡：${m.moster.loot.spellCards}`}
+                        {(m.moster.loot.gold === 0 && m.moster.loot.manaStone === 0 && !m.moster.loot.spellCards) && "無"}
+                    </span>
+                    </>
+                ) : (
+                    "空"
+                )}
+                </li>
+          ))}
+        </ul>
+        <h2>列隊怪物</h2>
+        <ul>
+          {queueMonster.map((m, i) => (
+            <li key={i}>{m.name}（HP: {m.HP}）</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

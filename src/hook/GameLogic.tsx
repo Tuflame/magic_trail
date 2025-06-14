@@ -30,10 +30,11 @@ export type Monster = {
     manaStone: number;
     spellCards: SpellCardType|null;
   };
-  imageUrl?:string;
+  imageUrl?:string; 
 };
 
 export type BattleFieldMonster={
+  index:number;
   moster:Monster;
   poisonedBy: number[]|null;
   lastIcedBy:number|null;
@@ -97,6 +98,7 @@ export function useGameLogic(){
     // 檢查是否從「結算」切到「事件」，若是才加回合
     if (previousPhaseRef.current === "結算" && phase === "事件") {
       setTurn((t) => t + 1);
+      rotatePlayers();
     }
 
     previousPhaseRef.current = phase;
@@ -219,8 +221,8 @@ export function useGameLogic(){
     }
 
     // 第二個戰利品（50% 機率出現）
-    if (Math.random() < 0.5) {
-      if (Math.random() < 0.4) {
+    if (Math.random() < 1) {
+      if (Math.random() < 0.1) {
         gold += 1;
       } else {
         spellCards = getRandomSpellCard();
@@ -252,6 +254,7 @@ export function useGameLogic(){
       const emptyIndex = battleFieldMonsters.findIndex(m => m === null);
       if (emptyIndex !== -1 && updatedQueue.length > 0) {
         const wrappedMonster: BattleFieldMonster = {
+          index:emptyIndex,
           moster: updatedQueue[0],
           poisonedBy: null,
           lastIcedBy: null,
@@ -265,7 +268,7 @@ export function useGameLogic(){
 
     useEffect(() => {
       fillBattlefieldFromQueue();
-    }, [queueMonsters]);
+    }, [battleFieldMonsters,queueMonsters]);
     //攻擊相關
     const elementCounterMap: Record<ElementType, ElementType> = {
       火: "木",
@@ -293,11 +296,13 @@ export function useGameLogic(){
         for (let i = 0; i < newBattlefield.length; i++) {
           const slot = newBattlefield[i];
           //如果沒有被毒或是已經被冰凍則跳過
+          if (!slot) continue;
           if (!slot || !slot.poisonedBy||slot.lastIcedBy) continue;
           for (const poisonerId of slot.poisonedBy) {
             const dmgPlayer = updatedPlayers.find(p => p.id === poisonerId);
             if (!dmgPlayer) continue;
             slot.moster.HP -= 1;
+            console.log(`${dmgPlayer.name}的毒發作，對戰場怪物${slot.moster.name}造成1點傷害`);
             if (slot.moster.HP <= 0) {
               // 發獎勵給最後毒死怪物者
               dmgPlayer.loot.gold += slot.moster.loot.gold;
@@ -305,7 +310,7 @@ export function useGameLogic(){
               if (slot.moster.loot.spellCards) {
                 dmgPlayer.loot.spellCards[slot.moster.loot.spellCards]++;
               }
-              console.log(`玩家${dmgPlayer.id} 毒殺了${slot.moster.name}`)
+              console.log(`玩家${dmgPlayer.name} 毒殺了${slot.moster.name}`)
               newBattlefield[i] = null;
               setBattleFieldMonsters(newBattlefield as [BattleFieldMonster | null, BattleFieldMonster | null, BattleFieldMonster | null]);
               break; // 怪物已死亡，跳出毒傷結算
@@ -319,10 +324,14 @@ export function useGameLogic(){
 
         // 如果該戰場是行動玩家先前冰的，則冰凍先解除
         if (slot.lastIcedBy && slot.lastIcedBy === currentPlayer.id) {
+          console.log(`先前玩家${currentPlayer.name}對${slot.moster.name}的冰凍已解除`)
           slot.lastIcedBy = null;
         }
         //如果戰場被冰了，則跳過攻擊
-        if(slot.lastIcedBy) continue;      
+        if(slot.lastIcedBy) {
+          console.log(`玩家${currentPlayer.name}對${slot.moster.name}攻擊因冰凍而失效`)
+          continue;
+        } 
 
         // 攻擊處理
         if (action.cardType === "魔法棒") {
@@ -403,28 +412,57 @@ export function useGameLogic(){
   //玩家區
   const [players, setPlayers] = useState<Player[]>([]);
   //生成玩家
-  const generatePlayer = (_id: number, _name: string): Player => {
-    const newPlayer: Player = {
-      id: _id,
-      name: _name,
-      attack: {
-        火: 1,
-        水: 1,
-        木: 1,
-      },
-      loot:{
-        gold: 0,
-        manaStone: 2,
-        spellCards:{
-          魔法棒:1,
-          冰凍法術: 0,
-          爆裂法術: 0,
-          毒藥法術: 0,
+  const generatePlayers = (amount: number=6) => {
+    const players:Player[]=[];
+    for(let i=1;i<=amount;i++){
+      players.push({
+        id: i,
+        name: `玩家${i}`,
+        attack: {
+          火: 1,
+          水: 1,
+          木: 1,
+        },
+        loot:{
+          gold: 0,
+          manaStone: 2,
+          spellCards:{
+            魔法棒:1,
+            冰凍法術: 0,
+            爆裂法術: 0,
+            毒藥法術: 0,
+          }
         }
-      }
-    };
-    setPlayers((prev) => [...prev, newPlayer]);
-    return newPlayer;
+      });
+    }
+    setPlayers(players);
+  };
+  const changePlayerField=(
+    playerId: number,
+    path: (string | number)[],
+    value: any
+    ) => {
+    setPlayers(ps =>
+      ps.map(p => {
+        if (p.id !== playerId) return p;
+        // 巢狀複製
+        let updated: any = { ...p };
+        let obj = updated;
+        for (let i = 0; i < path.length - 1; i++) {
+          obj[path[i]] = { ...obj[path[i]] }; // 只複製路徑上的每一層
+          obj = obj[path[i]];
+        }
+        obj[path[path.length - 1]] = value;
+        return updated;
+      })
+    );
+  }
+  const changePlayerName = (id: number, name: string) => {
+    setPlayers((prevPlayers) =>
+      prevPlayers.map((player) =>
+        player.id === id ? { ...player, name } : player
+      )
+    );
   };
   //順序調動卡
   const movePlayerIndexToFront = (index: number) => {
@@ -500,13 +538,6 @@ export function useGameLogic(){
       description: "元素能量混亂，以下隨機一種效果生效：",
       weighted:3,
       effects: [
-        {
-          description: "元素剋制關係失效",
-          weighted:1,
-          applyEffect: () => {
-            console.log("⚡ 剋制關係失效，本回合不計屬性差異");
-          },
-        },
         {
           description: "所有攻擊視為無屬性",
           weighted:1,
@@ -639,7 +670,8 @@ export function useGameLogic(){
   return {
     turn,
     players,
-    generatePlayer,
+    generatePlayers,
+    changePlayerName,
     battleFieldMonster: battleFieldMonsters,
     queueMonster: queueMonsters,
     generateMonster,
@@ -648,12 +680,13 @@ export function useGameLogic(){
     phase,
     executeActionPhase,
     movePlayerIndexToFront,
+    changePlayerField,
     rotatePlayers,
     event,
+    eventTable,
     nextForcedEvent: nextForcedEvent.current,
     setNextEvent,
     triggerEvent,
-    eventTable 
   };
 }
 
